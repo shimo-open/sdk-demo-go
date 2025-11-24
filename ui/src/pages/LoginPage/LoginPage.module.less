@@ -1,0 +1,41 @@
+@import "../../app.less";
+
+.container {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+    padding: 20px;
+    // position: relative;
+
+    :global {
+        .ant-tabs {
+            width: 400px;
+            margin-top: 50px;
+        }
+
+        .ant-btn {
+            width: 100px;
+        }
+    }
+}
+
+@minHeight: 600px;
+
+@media (min-height: @minHeight) {
+    .container {
+        justify-content: flex-start;
+        padding-top: 200px;
+    }
+}
+
+.logo {
+    margin: 0 !important;
+    width: auto !important;
+}
+
+.copyrightFooter {
+    bottom: 0;
+    position: absolute;
+}

@@ -1,0 +1,9 @@
+.idea/
+/bin/sdk-demo-go
+/logs/
+sdk-demo-go
+/pkg/consts/logs/
+/test-result/
+/config/local-dev.toml
+/ui/dist
+.DS_Store

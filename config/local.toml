@@ -1,0 +1,133 @@
+# ============================================================================
+# Local Development Configuration
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# AWS S3/MinIO Object Storage Configuration
+# ----------------------------------------------------------------------------
+[awos]
+  accessKeyId = "minioadmin"          # AWS access key ID or MinIO access key
+  secretAccessKey = "minioadmin"      # AWS secret access key or MinIO secret key
+  bucket = "shimo-sdk-demo"           # S3 bucket name
+  endpoint = "http://127.0.0.1:9000"  # S3 endpoint URL (for MinIO or custom S3)
+  region = "us-east-1"                # AWS region (e.g., us-east-1)
+  s3ForcePathStyle = true             # Use path-style URLs (required for MinIO)
+  publicEndpointReplacement = "http://127.0.0.1:9000" # Public URL replacement for file access
+
+# ----------------------------------------------------------------------------
+# HTTP Client Configuration
+# ----------------------------------------------------------------------------
+[client]
+  [client.http]
+    addr = ""                         # HTTP client address
+
+# ----------------------------------------------------------------------------
+# Host Configuration
+# ----------------------------------------------------------------------------
+[host]
+  addr = ""                           # Application host address
+
+# ----------------------------------------------------------------------------
+# JWT Authentication Configuration
+# ----------------------------------------------------------------------------
+[jwt]
+  secret = ""                         # JWT signing secret key
+
+# ----------------------------------------------------------------------------
+# MySQL Database Configuration
+# ----------------------------------------------------------------------------
+[mysql]
+  use = true                          # Enable MySQL
+  dsn = "root:123456@tcp(127.0.0.1:3306)/shimo_sdk_demo?charset=utf8mb4&parseTime=True&loc=Local" # Data Source Name (connection string)
+  debug = true                        # Enable debug mode (logs SQL queries)
+  level = "panic"                     # Log level (panic/error/warn/info/debug)
+  maxOpenConns = 100                  # Maximum open connections
+  maxIdleConns = 50                   # Maximum idle connections
+  connMaxLifetime = "300s"            # Connection max lifetime
+
+# ----------------------------------------------------------------------------
+# Redis Configuration
+# ----------------------------------------------------------------------------
+[redis]
+  [redis.test]
+    addr = "127.0.0.1:6379"           # Redis server address (host:port)
+    password = ""                     # Redis password
+    db = 1                            # Redis database number
+    poolSize = 30                     # Connection pool size
+    minIdleConns = 5                  # Minimum idle connections
+    dialTimeout = "10s"               # Dial timeout
+    idleTimeout = "300s"              # Idle connection timeout
+
+# ----------------------------------------------------------------------------
+# SDK Control Tool Configuration
+# ----------------------------------------------------------------------------
+[sdkctl]
+  email = ""                          # Default test user email
+  defaultPassword = ""                # Default test user password
+  printRes = false                    # Print API response results
+
+# ----------------------------------------------------------------------------
+# Server Configuration
+# ----------------------------------------------------------------------------
+[server]
+  # Governor (admin/metrics) server
+  [server.governor]
+    port = 9303                       # Governor server port
+
+  # HTTP server
+  [server.http]
+    port = 9301                       # HTTP server port
+    enableAccessInterceptor = true    # Enable access logging
+    enableAccessInterceptorRes = true # Enable access logging with request details
+    enableAccessInterceptorRes = true # Enable access logging with response details
+
+# ----------------------------------------------------------------------------
+# Shimo SDK Configuration
+# ----------------------------------------------------------------------------
+[shimoSDK]
+  appId = ""                          # Shimo application ID signed by Shimo SDK
+  appSecret = ""                      # Shimo application secret signed by Shimo SDK
+  endpoint = ""                       # Shimo SDK API endpoint
+  host = ""                           # Shimo SDK host address
+  expire = "1d"                       # Token expiration time (e.g., 1d, 24h)
+  downloadUrlPrefix = ""              # Download URL prefix
+  multipleClientMode = false          # Enable multiple client mode
+  importByUrlVersion = "v1"           # Import by URL API version
+  callbackVersion = "v2"              # Callback API version (v2 uses cache)
+
+# ----------------------------------------------------------------------------
+# Watermark Configuration
+# ----------------------------------------------------------------------------
+[watermark]
+  enable = true                       # Enable watermark feature
+  fields = ["id", "name", "email"]    # Watermark fields to display
+
+# ----------------------------------------------------------------------------
+# File Permissions Configuration
+# ----------------------------------------------------------------------------
+[permissions]
+  setNewFilePermission = false        # Set permissions when creating new files
+
+# ----------------------------------------------------------------------------
+# Public Path Configuration
+# ----------------------------------------------------------------------------
+[publicPath]
+  publicPath = "/sdk/demo/"           # Public path prefix for static resources
+
+# ----------------------------------------------------------------------------
+# Import Configuration
+# ----------------------------------------------------------------------------
+[import]
+  isDev = true                        # Development mode for import feature
+
+# ----------------------------------------------------------------------------
+# Frontend Inspection Configuration (Optional)
+# ----------------------------------------------------------------------------
+[frontInspect]
+  internalToken = ""                  # Internal authentication token
+  inspectEmail = ""                   # Inspection test email
+  defaultPassword = ""                # Default inspection password
+  cdn = ""                            # CDN URL for frontend assets
+
+  [frontInspect.http]
+    addr = ""                         # Frontend inspection HTTP address

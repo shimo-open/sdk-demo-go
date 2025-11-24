@@ -1,0 +1,54 @@
+@import "../../../app.less";
+
+.shimo-file {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.shimo-file-container,
+.shimo-file-container>iframe {
+  width: 100%;
+  height: 100% !important;
+}
+
+.shimo-file-container {
+  flex: 1;
+}
+
+.shimo-file-loader {
+  position: absolute !important;
+  z-index: -1 !important;
+}
+
+.shimo-file-error-message {
+  margin: 0 !important;
+  position: absolute !important;
+  top: 0 !important;
+  width: 100%;
+  z-index: 10 !important;
+}
+
+.previewFile {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview {
+  flex-grow: 1;
+  border: 0;
+}
+
+.spin {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+
+  .ant-spin-dot-item {
+    background-color: #000 !important;
+  }
+}

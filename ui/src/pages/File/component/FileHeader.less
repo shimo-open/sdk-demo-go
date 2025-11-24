@@ -1,0 +1,86 @@
+.shimo-file-header {
+  box-shadow: 0 1px 2px #ccc;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .triggerIcon {
+    font-size: 20px;
+    margin-right: 10px;
+    height: 50%;
+  }
+}
+
+.shimo-file-header>div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.shimo-file-header .ui.header {
+  align-items: center;
+  display: flex;
+  height: 56px;
+  margin: 0;
+}
+
+.shimo-file-header .icon.backward {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+}
+
+.shimo-file-header .file-name {
+  padding-left: 0 !important;
+  overflow: hidden;
+  display: flex;
+}
+
+.shimo-file-header .file-name .input {
+  border: 1px solid transparent;
+  max-width: 300px;
+  padding: 0 2px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+
+.shimo-file-header .file-name .input:hover {
+  border-bottom-color: rgba(0, 0, 0, 0.5);
+}
+
+.shimo-file-header .file-name .input:focus {
+  border-bottom-color: rgba(0, 0, 0, 0.8);
+  outline: 0 none;
+}
+
+.shimo-file-header .file-save-status {
+  margin-left: 1em;
+
+  .action {
+    font-size: 10px !important;
+    margin-right: 2px;
+  }
+}
+
+.shimo-file-header .file-save-status span {
+  color: #aaa;
+  font-size: 0.5em;
+}
+
+.shimo-file-header .file-save-status span.save-error {
+  color: #aa0000;
+
+  .anticon {
+    color: #aa0000;
+  }
+}
+
+.save-state-icon {
+  font-size: 1em !important;
+  margin-right: 2px;
+}

@@ -1,0 +1,92 @@
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+        monospace;
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+}
+
+// Override Ant Design styles
+:global {
+    .ant-tabs-tab-btn {
+        color: #00000099;
+    }
+
+    .ant-tabs-tab-active {
+        .ant-tabs-tab-btn {
+            color: #000 !important;
+            font-weight: bold;
+        }
+    }
+
+    .ant-tabs-ink-bar {
+        background: #000 !important;
+    }
+
+    .ant-btn-primary {
+        background: #000 !important;
+
+        &:disabled {
+            background: #00000099 !important;
+            color: #ffffff99 !important;
+        }
+    }
+
+    .ant-btn-primary:hover {
+        background: #00000099
+    }
+
+    .ant-spin-dot-item {
+        background-color: #000 !important;
+    }
+
+    .ant-list-item-meta {
+        align-items: baseline;
+    }
+
+    .ant-table-row.ant-table-row-selected>.ant-table-cell {
+        background: #0000000b !important;
+    }
+
+    .ant-checkbox-checked {
+        .ant-checkbox-inner {
+            background-color: #000;
+            border: #000;
+
+            &:after {
+                background-color: #000 !important;
+            }
+        }
+    }
+
+    .ant-checkbox:not(.ant-checkbox-disabled):hover .ant-checkbox-inner {
+        border-color: #000 !important;
+    }
+
+    .ant-checkbox-checked:not(.ant-checkbox-disabled):hover,
+    .ant-checkbox-wrapper:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-checked:not(.ant-checkbox-disabled) {
+        .ant-checkbox-inner {
+            background-color: #000 !important;
+        }
+    }
+
+    .ant-checkbox-inner:after {
+        background-color: #000 !important;
+    }
+}

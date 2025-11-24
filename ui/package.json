@@ -1,0 +1,33 @@
+{
+  "private": true,
+  "author": "",
+  "scripts": {
+    "dev": "umi dev",
+    "build": "umi build",
+    "postinstall": "umi setup",
+    "setup": "umi setup",
+    "start": "cross-env BASE=/sdk/demo/ PUBLIC_PATH=/sdk/demo/ PROXY_PATH=http://localhost:9301/ npm run dev"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.3.7",
+    "@ant-design/pro-layout": "^7.19.0",
+    "ant-design": "^1.0.0",
+    "antd": "^5.28.0",
+    "axios": "^1.6.8",
+    "base-x": "^5.0.0",
+    "dayjs": "^1.11.11",
+    "email-regex": "^5.0.0",
+    "is-mobile": "^4.0.0",
+    "is-plain-obj": "^4.1.0",
+    "shimo-js-sdk": "^1.2.14",
+    "umi": "^4.1.10"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.20",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
+    "@umijs/plugins": "^4.1.10",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.0.3"
+  }
+}
