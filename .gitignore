@@ -7,3 +7,5 @@ sdk-demo-go
 /config/local-dev.toml
 /ui/dist
 .DS_Store
+
+go.work*

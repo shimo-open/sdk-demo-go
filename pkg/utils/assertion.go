@@ -8,8 +8,6 @@ import (
 	"github.com/gotomicro/cetus/l"
 	"github.com/gotomicro/ego/core/elog"
 	"github.com/jmespath/go-jmespath"
-
-	"sdk-demo-go/pkg/consts"
 )
 
 // Validator defines a validation rule
@@ -181,22 +179,4 @@ func Validate(checkValue interface{}, assertion string, expect interface{}) (str
 		l.A("expect", expect))
 
 	return "assertion succeeded", nil
-}
-
-func ValidateHttpCode(api consts.ShimoSdkApi, code int, body []byte) error {
-	// Ensure the API has expected HTTP codes defined
-	apiCodeMap, exists := consts.ShimoSdkApiExpectCodesMap[api]
-	if !exists {
-		// No mapping found; return an error
-		return fmt.Errorf("missing expected HTTP codes for API: %s", api)
-	}
-
-	// Check if the status code is allowed
-	if _, valid := apiCodeMap[code]; valid {
-		// Valid code; return nil
-		return nil
-	}
-
-	// Invalid code; include details
-	return fmt.Errorf("unexpected HTTP status: API=%s, code=%d, body=%s", api, code, string(body))
 }

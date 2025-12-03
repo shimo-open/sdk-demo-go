@@ -13,13 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/gotomicro/ego/core/econf"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
+	sdk "github.com/shimo-open/sdk-kit-go"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 	"golang.org/x/crypto/bcrypt"
-
-	"sdk-demo-go/pkg/consts"
 )
 
 // CustomClaims extends JWT standard claims with additional fields
@@ -36,28 +35,6 @@ func HashPassword(passwrod string) string {
 		panic(err)
 	}
 	return string(hashed)
-}
-
-// Sign issues a Shimo signature
-// When strict is true, the signature lasts 4 minutes and includes scope:"license"
-// When strict is false, the signature lasts 1 year
-func Sign(appID, appSecret string, strict bool) string {
-	nowTime := time.Now()
-
-	var addTime time.Duration
-	if strict {
-		addTime = time.Minute * 4
-	} else {
-		addTime = time.Hour * 24 * 365
-	}
-	exp := nowTime.Add(addTime).Unix()
-
-	if strict {
-		return SignJWT(appID, appSecret, exp, true)
-	} else {
-		return SignJWT(appID, appSecret, exp, false)
-	}
-
 }
 
 // SignJWT generates a JWT token with the given parameters
@@ -158,20 +135,15 @@ func GenFileGuid() string {
 }
 
 // GenFileName generates a filename with timestamp and file type
-func GenFileName(fileType consts.FileType) string {
+func GenFileName(fileType sdk.FileType) string {
 	return time.Now().Format("2006-01-02 15:04:05") + "-" + fileType.String()
 }
 
 // GetAuth generates authentication credentials for a user
-func GetAuth(userId int64, isStrict ...bool) (auth sdkapi.Auth) {
-	auth.Token = SignUserJWT(userId)
-	strict := false
-	if len(isStrict) > 0 {
-		strict = isStrict[0] // Use the first provided value if present
-	}
-	auth.Signature = Sign(econf.GetString("shimoSDK.appId"), econf.GetString("shimoSDK.appSecret"), strict)
+func GetAuth(userId int64) (auth sdkapi.Metadata) {
+	auth.ShimoToken = SignUserJWT(userId)
 	if econf.GetString("shimoSDK.callbackVersion") == "v2" {
-		auth.UserUuid = GetHashUserUuid(userId)
+		auth.WebofficeUserUuid = GetHashUserUuid(userId)
 	}
 	return
 }

@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gotomicro/ego/core/econf"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 
-	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/models/db"
 	"sdk-demo-go/pkg/server/http/api"
@@ -26,7 +26,7 @@ func GetCurrentUser(c *gin.Context) {
 	userId := getUserIdFromToken(c)
 
 	if userId < 0 {
-		_anonUser := api.LoadAnonymousUser(consts.ANONYMOUS)
+		_anonUser := api.LoadAnonymousUser(sdkapi.Anonymous)
 		anonUser := db.User{
 			Name:   _anonUser.User.Name,
 			Avatar: _anonUser.User.Avatar,

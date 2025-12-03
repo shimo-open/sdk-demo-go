@@ -12,7 +12,8 @@ import (
 	"github.com/gotomicro/cetus/l"
 	"github.com/gotomicro/ego/core/econf"
 	"github.com/gotomicro/ego/core/elog"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
+	sdk "github.com/shimo-open/sdk-kit-go"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 
 	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/invoker"
@@ -47,7 +48,7 @@ func TestAll(ctx context.Context, fileTypeStr string) (testAllRes consts.AllApiT
 // Includes base functionality and import/export flows
 // When fileTypeStr is empty/invalid/all, every suite is tested
 func TestCommon(ctx context.Context, fileTypeStr string) {
-	if fileTypeStr == "" || consts.GetFileType(fileTypeStr) == consts.FileTypeInvalid {
+	if fileTypeStr == "" || sdk.FileType(fileTypeStr) == sdk.FileTypeInvalid {
 		fileTypeStr = "all"
 	}
 
@@ -57,12 +58,12 @@ func TestCommon(ctx context.Context, fileTypeStr string) {
 	TestFileIO(ctx, fileTypes)
 }
 
-func TestFileIO(ctx context.Context, fileTypes []consts.FileType) (resMap map[consts.FileType]consts.FileIORes) {
-	resMap = make(map[consts.FileType]consts.FileIORes)
+func TestFileIO(ctx context.Context, fileTypes []sdk.FileType) (resMap map[sdk.FileType]consts.FileIORes) {
+	resMap = make(map[sdk.FileType]consts.FileIORes)
 
 	for _, ft := range fileTypes {
 		// Application tables lack the shared import/export APIs
-		if ft == consts.FileTypeTable {
+		if ft == sdk.FileTypeTable {
 			continue
 		}
 
@@ -80,8 +81,8 @@ func TestFileIO(ctx context.Context, fileTypes []consts.FileType) (resMap map[co
 // fetch history list, fetch revisions, fetch plain text,
 // fetch plain-text word count, fetch mention list,
 // fetch comment count, and delete the document at the end
-func TestBase(ctx context.Context, fileTypes []consts.FileType) (testResMap map[consts.FileType]consts.BaseTestRes) {
-	testResMap = make(map[consts.FileType]consts.BaseTestRes)
+func TestBase(ctx context.Context, fileTypes []sdk.FileType) (testResMap map[sdk.FileType]consts.BaseTestRes) {
+	testResMap = make(map[sdk.FileType]consts.BaseTestRes)
 
 	for _, ft := range fileTypes {
 		tmpBaseRes := consts.BaseTestRes{}
@@ -105,8 +106,8 @@ func TestBase(ctx context.Context, fileTypes []consts.FileType) (testResMap map[
 		tmpBaseRes.GetHistoryListRes = TestGetDocSidebarInfo(ctx, fileId, 0, 0)
 		tmpBaseRes.GetRevisionListRes = TestGetRevision(ctx, fileId)
 
-		if ft != consts.FileTypeTable {
-			fileExts := consts.ImportTypeMap[ft]
+		if ft != sdk.FileTypeTable {
+			fileExts := sdk.ImportTypeMap[ft]
 			filePath := "resources/import/test." + fileExts[0]
 			tmpBaseRes.CreateFileRes = testCreateRes
 			succ, fileGuid, _, _ := doImportOnce(ctx, filePath, ft, 20*time.Second)
@@ -121,7 +122,7 @@ func TestBase(ctx context.Context, fileTypes []consts.FileType) (testResMap map[
 			TestDeleteFile(ctx, fileGuid)
 		}
 
-		if ft != consts.FileTypeSlide && ft != consts.FileTypeTable {
+		if ft != sdk.FileTypeSlide && ft != sdk.FileTypeTable {
 			// Slides and application tables lack the mention API
 			tmpBaseRes.GetMentionAtListRes = TestMentionAtList(ctx, fileId)
 		}
@@ -134,19 +135,19 @@ func TestBase(ctx context.Context, fileTypes []consts.FileType) (testResMap map[
 	return
 }
 
-func TestImport(ctx context.Context, fileType consts.FileType) (resMap map[consts.FileType]map[string]consts.ImportFileRes) {
-	importTypes := make([]consts.FileType, 0)
+func TestImport(ctx context.Context, fileType sdk.FileType) (resMap map[sdk.FileType]map[string]consts.ImportFileRes) {
+	importTypes := make([]sdk.FileType, 0)
 
 	// If "all" is specified, test every file type
-	if fileType == consts.FileTypeAll {
-		for t, _ := range consts.ImportTypeMap {
+	if fileType == sdk.FileTypeAll {
+		for t, _ := range sdk.ImportTypeMap {
 			importTypes = append(importTypes, t)
 		}
 	} else {
 		importTypes = append(importTypes, fileType)
 	}
 
-	resMap = make(map[consts.FileType]map[string]consts.ImportFileRes)
+	resMap = make(map[sdk.FileType]map[string]consts.ImportFileRes)
 	for _, t := range importTypes {
 		tmpResMap := TestImportOnce(ctx, t, 20)
 		resMap[t] = tmpResMap
@@ -154,24 +155,24 @@ func TestImport(ctx context.Context, fileType consts.FileType) (resMap map[const
 	return
 }
 
-func TestExport(ctx context.Context, fileType consts.FileType) (resMap map[consts.FileType]map[string]consts.ExportFileRes) {
-	if fileType == consts.FileTypeInvalid {
+func TestExport(ctx context.Context, fileType sdk.FileType) (resMap map[sdk.FileType]map[string]consts.ExportFileRes) {
+	if fileType == sdk.FileTypeInvalid {
 		return
 	}
 
-	exportTypes := make([]consts.FileType, 0)
+	exportTypes := make([]sdk.FileType, 0)
 
-	if fileType == consts.FileTypeAll {
-		for t, _ := range consts.ExportTypeMap {
+	if fileType == sdk.FileTypeAll {
+		for t, _ := range sdk.ExportTypeMap {
 			exportTypes = append(exportTypes, t)
 		}
 	} else {
 		exportTypes = append(exportTypes, fileType)
 	}
 
-	resMap = make(map[consts.FileType]map[string]consts.ExportFileRes)
+	resMap = make(map[sdk.FileType]map[string]consts.ExportFileRes)
 	for _, t := range exportTypes {
-		fileExts := consts.ImportTypeMap[t]
+		fileExts := sdk.ImportTypeMap[t]
 		filePath := "resources/import/test."
 		if len(fileExts) > 0 {
 			filePath += fileExts[0]
@@ -202,8 +203,8 @@ func TestExport(ctx context.Context, fileType consts.FileType) (resMap map[const
 
 // TestImportOnce runs a full import pass for each supported extension of a file type
 // Includes a timeout
-func TestImportOnce(ctx context.Context, fileType consts.FileType, timeoutSec int64) (resMap map[string]consts.ImportFileRes) {
-	if fileType == consts.FileTypeInvalid {
+func TestImportOnce(ctx context.Context, fileType sdk.FileType, timeoutSec int64) (resMap map[string]consts.ImportFileRes) {
+	if fileType == sdk.FileTypeInvalid {
 		return
 	}
 
@@ -227,7 +228,7 @@ func TestImportOnce(ctx context.Context, fileType consts.FileType, timeoutSec in
 	return
 }
 
-func doImportOnce(ctx context.Context, filePath string, fileType consts.FileType, timeoutSec time.Duration) (success bool, fileGuid string, statusCode int, errMsg string) {
+func doImportOnce(ctx context.Context, filePath string, fileType sdk.FileType, timeoutSec time.Duration) (success bool, fileGuid string, statusCode int, errMsg string) {
 	fmt.Println(fmt.Sprintf("Import test: type=%s, path=%s", fileType.String(), filePath))
 	taskId, fileGuid, statusCode, err := TestImportFile(ctx, filePath, fileType.String(), fileType.String())
 	if err != nil {
@@ -269,8 +270,8 @@ type ExportFileReq struct {
 	Type string `json:"type"`
 }
 
-func TestExportOnce(ctx context.Context, fileType consts.FileType, fileId string, timeoutSec int64) (resMap map[string]consts.ExportFileRes) {
-	exportExts := consts.ExportTypeMap[fileType]
+func TestExportOnce(ctx context.Context, fileType sdk.FileType, fileId string, timeoutSec int64) (resMap map[string]consts.ExportFileRes) {
+	exportExts := sdk.ExportTypeMap[fileType]
 	resMap = make(map[string]consts.ExportFileRes)
 
 	for _, ext := range exportExts {
@@ -292,7 +293,7 @@ func TestExportOnce(ctx context.Context, fileType consts.FileType, fileId string
 	return
 }
 
-func doExportOnce(ctx context.Context, fileType consts.FileType, exportExt, fileGuid string, timeoutSec time.Duration) (success bool, statusCode int, errMsg string) {
+func doExportOnce(ctx context.Context, fileType sdk.FileType, exportExt, fileGuid string, timeoutSec time.Duration) (success bool, statusCode int, errMsg string) {
 	fmt.Print(fmt.Sprintf("\n导出测试，文件id：%s 文件类型：%s，导出类型：%s", fileGuid, fileType, exportExt))
 	taskId := TestExportFile(ctx, fileGuid, exportExt)
 
@@ -326,14 +327,14 @@ func doExportOnce(ctx context.Context, fileType consts.FileType, exportExt, file
 }
 
 // Mapping of Shimo file types to importable types
-var importTypeMap = map[consts.FileType][]string{
-	consts.FileTypeDocument:    {"docx", "doc", "md", "txt"},
-	consts.FileTypeSpreadsheet: {"xlsx", "xls", "csv", "xlsm"},
-	consts.FileTypeDocPro:      {"docx", "doc", "wps"},
-	consts.FileTypeSlide:       {"pptx", "ppt"},
+var importTypeMap = map[sdk.FileType][]string{
+	sdk.FileTypeDocument:    {"docx", "doc", "md", "txt"},
+	sdk.FileTypeSpreadsheet: {"xlsx", "xls", "csv", "xlsm"},
+	sdk.FileTypeDocPro:      {"docx", "doc", "wps"},
+	sdk.FileTypeSlide:       {"pptx", "ppt"},
 }
 
-func getImportFilePathByType(ft consts.FileType) []string {
+func getImportFilePathByType(ft sdk.FileType) []string {
 	folderPath := "resources/import/"
 	res := []string{}
 	for _, ext := range importTypeMap[ft] {
@@ -358,7 +359,7 @@ func TestSpecial(ctx context.Context) {
 func TestSpreadsheet(ctx context.Context) (testRes consts.SpreadsheetRes) {
 	testRes = consts.SpreadsheetRes{}
 	// Import a spreadsheet file
-	succ, fileGuid, _, errMsg := doImportOnce(ctx, "resources/import/test.xlsx", consts.FileTypeSpreadsheet, 20*time.Second)
+	succ, fileGuid, _, errMsg := doImportOnce(ctx, "resources/import/test.xlsx", sdk.FileTypeSpreadsheet, 20*time.Second)
 	if !succ {
 		errResp := consts.SingleApiTestRes{Success: false, ErrMsg: fmt.Sprintf("导入失败，无法测试表格功能, err: %s", errMsg)}
 		elog.Error("Import failed, unable to test spreadsheet functionality")
@@ -473,7 +474,7 @@ func TestSpreadsheet(ctx context.Context) (testRes consts.SpreadsheetRes) {
 // TestDocumentPro covers Document Pro functionality:
 // read bookmarks, replace bookmarks, and test with a document containing bookmarks
 func TestDocumentPro(ctx context.Context) (testRes consts.DocumentProRes) {
-	succ, fileGuid, _, errMsg := doImportOnce(ctx, "resources/import/test.docx", consts.FileTypeDocPro, 20*time.Second)
+	succ, fileGuid, _, errMsg := doImportOnce(ctx, "resources/import/test.docx", sdk.FileTypeDocPro, 20*time.Second)
 	if !succ {
 		errResp := consts.SingleApiTestRes{Success: false, ErrMsg: fmt.Sprintf("导入失败，无法测试传统文档功能, err: %s", errMsg)}
 		testRes = consts.DocumentProRes{
@@ -504,7 +505,7 @@ func TestDocumentPro(ctx context.Context) (testRes consts.DocumentProRes) {
 // TestTable handles application-table features
 // Export an application table as a professional spreadsheet
 func TestTable(ctx context.Context) (testRes consts.TableRes) {
-	fileGuid, _, err := TestCreateFile(ctx, "应用表格转表格", consts.FileTypeTable.String(), consts.FileTypeTable.String(), "", "")
+	fileGuid, _, err := TestCreateFile(ctx, "应用表格转表格", sdk.FileTypeTable.String(), sdk.FileTypeTable.String(), "", "")
 	if err != nil {
 		errResp := consts.SingleApiTestRes{Success: false, ErrMsg: fmt.Sprintf("创建文件失败，无法测试应用表格功能, err: %s", err.Error())}
 		testRes = consts.TableRes{
@@ -601,18 +602,18 @@ func buildSystemErrorRes(errMsg string) consts.SystemRes {
 	}
 }
 
-func fileTypesByFileTypeStr(fileTypeStr string) (fts []consts.FileType) {
-	fts = make([]consts.FileType, 0)
+func fileTypesByFileTypeStr(fileTypeStr string) (fts []sdk.FileType) {
+	fts = make([]sdk.FileType, 0)
 	if fileTypeStr == "all" {
-		fts = consts.AllFileTypes()
+		fts = sdk.AllFileTypes()
 	} else {
 		if strings.Contains(fileTypeStr, ",") {
 			s := strings.Split(fileTypeStr, ",")
 			for _, v := range s {
-				fts = append(fts, consts.GetFileType(v))
+				fts = append(fts, sdk.GetFileType(v))
 			}
 		} else {
-			fts = append(fts, consts.GetFileType(fileTypeStr))
+			fts = append(fts, sdk.GetFileType(fileTypeStr))
 		}
 	}
 

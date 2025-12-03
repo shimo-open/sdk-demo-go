@@ -1,4 +1,4 @@
-import { defineConfig } from "umi";
+import {defineConfig} from "umi";
 
 export default defineConfig({
   publicPath: process.env.PUBLIC_PATH || '/',
@@ -27,7 +27,7 @@ export default defineConfig({
     '/api': {
       target: 'http://localhost:9001',
       changeOrigin: true,
-      pathRewrite: { '^/api': '' },
+      pathRewrite: { '^/api': '/' },
     },
   },
   plugins: ['@umijs/plugins/dist/model'],

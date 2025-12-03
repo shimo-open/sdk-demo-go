@@ -1,6 +1,6 @@
 module sdk-demo-go
 
-go 1.23.2
+go 1.24.2
 
 require (
 	github.com/aws/aws-sdk-go v1.38.52
@@ -10,20 +10,22 @@ require (
 	github.com/ego-component/excelplus v0.0.0-20231123161559-d1cdddaf0bfc
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/gin-gonic/gin v1.9.1
+	github.com/go-resty/resty/v2 v2.13.1
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/gotomicro/cetus/l v0.0.0-20241219021243-83a803a567c1
 	github.com/gotomicro/cetus/xpongo v0.0.0-20241219021243-83a803a567c1
-	github.com/gotomicro/ego v1.2.2
-	github.com/gotomicro/gorm-to-dm v0.0.0-20251121033850-d7824b93bc7f
+	github.com/gotomicro/ego v1.2.6-0.20250823043924-bee992dabb65
+	github.com/gotomicro/gorm-to-dm v0.0.0-20251125055001-6225223b0290
 	github.com/h2non/filetype v1.1.3
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
-	github.com/shimo-open/sdk-kit-go v0.0.0-20251121060108-13afa6b81590
+	github.com/shimo-open/sdk-kit-go v0.0.0-20251203094145-ca8bae6b3b7a
 	github.com/spf13/cast v1.5.1
 	github.com/spf13/cobra v1.9.1
 	go.uber.org/automaxprocs v1.5.1
-	golang.org/x/crypto v0.23.0
+	golang.org/x/crypto v0.45.0
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
 	gorm.io/plugin/soft_delete v1.2.1
@@ -48,6 +50,7 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58 // indirect
 	github.com/codegangsta/inject v0.0.0-20150114235600-33e0aa1cb7c0 // indirect
+	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/ego-component/eos v1.0.1-0.20240920022356-6d4485f88440 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -63,7 +66,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.14.0 // indirect
-	github.com/go-resty/resty/v2 v2.13.1 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
@@ -137,10 +139,10 @@ require (
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
-	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect

@@ -2,11 +2,10 @@ package db
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/gotomicro/cetus/l"
+	"github.com/shimo-open/sdk-kit-go"
 
-	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/utils"
 
 	"github.com/gotomicro/ego/core/econf"
@@ -143,10 +142,10 @@ func CreateFile(db *gorm.DB, file *File, userId int64, permissions ...map[string
 		if len(permissions) > 0 {
 			filePermissionsList = permissions[0]
 		} else {
-			filePermissionsList = consts.HandleBasicFilePermission(true)
+			filePermissionsList = sdk.HandleBasicFilePermission(true)
 
 			if econf.GetBool("permissions.setNewFilePermission") {
-				filePermissionsList = consts.HandleFilePermission(true)
+				filePermissionsList = sdk.HandleFilePermission(true)
 			}
 		}
 
@@ -206,19 +205,6 @@ func RemoveFileById(db *gorm.DB, fileId int64) (err error) {
 		return err
 	}
 	return db.Where("file_id = ?", fileId).Delete(&FilePermissions{}).Error
-}
-
-// GetDownloadUrl returns the download URL
-// The URL points to the callback endpoint for downloading
-// Clients can download the file using the returned URL
-func GetDownloadUrl(fileId string) (url string) {
-	outerHost := econf.GetString("host.outerHost")
-	if outerHost != "" {
-		return fmt.Sprintf("%s/callback/files/%s/download", outerHost, fileId)
-	}
-
-	host := econf.GetString("shimoSDK.downloadUrlPrefix")
-	return fmt.Sprintf("%s/files/%s/download", host, fileId)
 }
 
 // FindFileByGuidAndUserId fetches a file scoped to a user

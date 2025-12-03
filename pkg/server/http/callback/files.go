@@ -15,10 +15,9 @@ import (
 	"github.com/gotomicro/cetus/l"
 	"github.com/gotomicro/ego/core/econf"
 	"github.com/gotomicro/ego/core/elog"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
-	sdkcommon "github.com/shimo-open/sdk-kit-go/model/common"
+	sdk "github.com/shimo-open/sdk-kit-go"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 
-	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/models/db"
 	"sdk-demo-go/pkg/server/http/api"
@@ -40,7 +39,7 @@ type FileInfo struct {
 func GetFileInfo(c *gin.Context) {
 	userId := getUserIdFromToken(c)
 	if userId == 0 {
-		userId = consts.ANONYMOUS
+		userId = sdkapi.Anonymous
 	}
 	fileGuid := c.Param("fileGuid")
 
@@ -111,14 +110,14 @@ func CreateFiles(c *gin.Context) {
 	if body.ContentKey != "" {
 		// Create the SDK file
 		auth := utils.GetAuth(userId)
-		cFile := sdkapi.CreateFileParams{
-			FileType:   sdkcommon.CollabFileType(file.ShimoType),
-			Auth:       auth,
-			Lang:       sdkcommon.Lang(lang),
-			FileId:     file.Guid,
+		cFile := sdkapi.CreateFileReq{
+			FileType:   sdkapi.CollabFileType(file.ShimoType),
+			Metadata:   auth,
+			Lang:       sdkapi.Lang(lang),
+			FileID:     file.Guid,
 			ContentKey: body.ContentKey,
 		}
-		_, err = invoker.SdkMgr.CreateFile(cFile)
+		_, err = invoker.SdkMgr.CreateFile(c.Request.Context(), cFile)
 		if err != nil {
 			// Delete the record if creation fails
 			_ = db.RemoveFileById(invoker.DB, file.ID)
@@ -225,9 +224,9 @@ func AdminGetFileInfo(c *gin.Context) {
 	}
 
 	if econf.GetBool("permissions.setNewFilePermission") {
-		file.Permissions = consts.HandleFilePermission(true)
+		file.Permissions = sdk.HandleFilePermission(true)
 	} else {
-		file.Permissions = consts.HandleBasicFilePermission(true)
+		file.Permissions = sdk.HandleBasicFilePermission(true)
 	}
 
 	if file.IsShimoFile == 1 {
@@ -404,41 +403,41 @@ func ImportFile(c *gin.Context) {
 		// Create the SDK file
 		auth := utils.GetAuth(getUserIdFromToken(c))
 		importBody := sdkapi.ImportFileReqBody{
-			FileId:   file.Guid,
+			FileID:   file.Guid,
 			Type:     file.ShimoType,
 			FileName: file.Name,
 			FileUrl:  fileUrl,
 		}
-		params := sdkapi.ImportFileParams{
-			Auth:              auth,
+		params := sdkapi.ImportFileReq{
+			Metadata:          auth,
 			ImportFileReqBody: importBody,
 		}
-		var res sdkapi.ImportFileRespBody
+		var res sdkapi.ImportFileRes
 		if econf.GetString("shimoSDK.importByUrlVersion") == "v2" {
-			res, err = invoker.SdkMgr.ImportV2File(params)
+			res, err = invoker.SdkMgr.ImportV2File(c.Request.Context(), params)
 		} else {
-			res, err = invoker.SdkMgr.ImportFile(params)
+			res, err = invoker.SdkMgr.ImportFile(c.Request.Context(), params)
 		}
 		if err != nil || res.Status != 0 {
 			rmErr := db.RemoveFileByGuid(invoker.DB, file.Guid)
 			if rmErr != nil {
 				elog.Warn("rollback file failed", l.E(rmErr))
 			}
-			e := fmt.Errorf("import file failed, got: %d, resp body: %s", res.Resp.StatusCode(), string(res.Resp.Body()))
-			c.JSON(res.Resp.StatusCode(), e.Error())
+			e := fmt.Errorf("import file failed, got: %d, resp body: %s", res.Response().StatusCode(), string(res.Response().Body()))
+			c.JSON(res.Response().StatusCode(), e.Error())
 			return
 		}
 
-		taskId := res.Data.TaskId
+		taskId := res.Data.TaskID
 		if taskId == "" {
 			c.JSON(500, "taskId not found")
 			return
 		}
 		// Poll the import progress
-		var progressResp sdkapi.GetImportProgRespBody
-		progressParams := sdkapi.GetImportProgParams{
-			Auth:   auth,
-			TaskId: taskId,
+		var progressResp sdkapi.GetImportProgRes
+		progressParams := sdkapi.GetImportProgReq{
+			Metadata: auth,
+			TaskId:   taskId,
 		}
 		timeout := time.After(3 * time.Minute) // Wait at most 2 minutes
 		ticker := time.NewTicker(1 * time.Second)
@@ -454,9 +453,9 @@ func ImportFile(c *gin.Context) {
 				return
 			case <-ticker.C:
 				if econf.GetString("shimoSDK.importByUrlVersion") == "v2" {
-					progressResp, err = invoker.SdkMgr.GetImportV2Progress(progressParams)
+					progressResp, err = invoker.SdkMgr.GetImportV2Progress(c.Request.Context(), progressParams)
 				} else {
-					progressResp, err = invoker.SdkMgr.GetImportProgress(progressParams)
+					progressResp, err = invoker.SdkMgr.GetImportProgress(c.Request.Context(), progressParams)
 				}
 				if err != nil {
 					rmErr := db.RemoveFileByGuid(invoker.DB, file.Guid)
@@ -595,7 +594,7 @@ func loadFileInfo(file *db.File) *FileInfo {
 func GetFileUrl(c *gin.Context) {
 	userId := getUserIdFromToken(c)
 	if userId == 0 {
-		userId = consts.ANONYMOUS
+		userId = sdkapi.Anonymous
 	}
 	fileGuid := c.Param("fileGuid")
 	var u string

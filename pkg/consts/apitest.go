@@ -1,5 +1,9 @@
 package consts
 
+import (
+	"github.com/shimo-open/sdk-kit-go"
+)
+
 // TestStatus represents the status of a test execution
 type TestStatus int
 
@@ -17,9 +21,9 @@ func (t TestStatus) int() int { return int(t) }
 // AllApiTestRes holds all API test results organized by functionality
 type AllApiTestRes struct {
 	// Basic functionality shared by every suite
-	BaseTestResMap map[FileType]BaseTestRes `json:"baseTestResMap"`
+	BaseTestResMap map[sdk.FileType]BaseTestRes `json:"baseTestResMap"`
 	// Import/export functionality shared by every suite
-	FileIOResMap map[FileType]FileIORes `json:"fileIOResMap"`
+	FileIOResMap map[sdk.FileType]FileIORes `json:"fileIOResMap"`
 	// Spreadsheet-specific functionality
 	SpreadsheetRes SpreadsheetRes `json:"spreadsheetRes"`
 	// Document Pro-specific functionality
@@ -58,10 +62,10 @@ type BaseTestRes struct {
 type FileIORes struct {
 	// Import files
 	// Import for each supported format
-	ImportFileRes map[FileType]map[string]ImportFileRes `json:"importFileRes"`
+	ImportFileRes map[sdk.FileType]map[string]ImportFileRes `json:"importFileRes"`
 	// Export files
 	// Export for each supported format
-	ExportFileRes map[FileType]map[string]ExportFileRes `json:"exportFileRes"`
+	ExportFileRes map[sdk.FileType]map[string]ExportFileRes `json:"exportFileRes"`
 }
 
 // SpreadsheetRes holds test results for spreadsheet-specific operations
@@ -150,14 +154,14 @@ type ExportFileRes struct {
 
 // ExportBodyReq represents the request body for file export
 type ExportBodyReq struct {
-	Type FileType `json:"type"`
+	Type sdk.FileType `json:"type"`
 }
 
 // FileFormData represents multipart form data for file operations
 type FileFormData struct {
-	FilePath string   `json:"filePath"`
-	FileId   string   `json:"fileId"`
-	FileType FileType `json:"fileType"`
+	FilePath string       `json:"filePath"`
+	FileId   string       `json:"fileId"`
+	FileType sdk.FileType `json:"fileType"`
 }
 
 var SheetNameMap = map[string]string{

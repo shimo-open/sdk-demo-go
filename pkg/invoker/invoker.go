@@ -2,6 +2,11 @@ package invoker
 
 import (
 	"log"
+	"net/url"
+
+	"github.com/gotomicro/cetus/l"
+	"github.com/gotomicro/ego/client/ehttp"
+	"github.com/gotomicro/ego/core/elog"
 
 	"sdk-demo-go/pkg/models/db"
 	"sdk-demo-go/pkg/services"
@@ -23,7 +28,7 @@ var (
 	// DB is the database connection instance
 	DB *gorm.DB
 	// SdkMgr is the Shimo SDK manager instance
-	SdkMgr *sdk.SdkManager
+	SdkMgr *sdk.Manager
 )
 
 func Init() error {
@@ -89,7 +94,15 @@ func initTables() error {
 
 func InitShimo() {
 	// Initialize the sdk-sdk service
-	SdkMgr = sdk.NewSdkManager(sdk.DefaultManagerConf())
-	sdk.SetPrefix(econf.GetString("client.http.addr"))
+	shimoHost := econf.GetString("shimoSDK.host")
+	_, err := url.Parse(shimoHost)
+	if err != nil {
+		elog.Panic("invalid endpoint", l.E(err))
+	}
+	SdkMgr = sdk.NewManager(
+		sdk.WithAppID(econf.GetString("shimoSDK.appId")),
+		sdk.WithAppSecret(econf.GetString("shimoSDK.appSecret")),
+		sdk.WithHTTPClient(ehttp.Load("").Build(ehttp.WithAddr(shimoHost), ehttp.WithRawDebug(true))),
+	)
 	Services = services.NewServices()
 }

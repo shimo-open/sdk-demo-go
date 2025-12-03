@@ -8,6 +8,7 @@ import (
 	"github.com/ego-component/excelplus"
 	"github.com/gotomicro/cetus/l"
 	"github.com/gotomicro/ego/core/elog"
+	sdk "github.com/shimo-open/sdk-kit-go"
 
 	"sdk-demo-go/pkg/consts"
 )
@@ -32,12 +33,12 @@ func TestSaveExcel(testRes consts.AllApiTestRes) {
 				elog.Panic("BaseTestResMap sheet error", l.E(err))
 			}
 			for key, _ := range testRes.BaseTestResMap {
-				if key != consts.FileTypeTable {
+				if key != sdk.FileTypeTable {
 					// Application tables do not expose these APIs
 					BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[key].GetPlainTextRes)
 					BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[key].GetPlainTextWordCountRes)
 				}
-				if key != consts.FileTypeSlide {
+				if key != sdk.FileTypeSlide {
 					// Slides lack the mention API
 					BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[key].GetMentionAtListRes)
 				}

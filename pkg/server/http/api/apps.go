@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gotomicro/ego/core/econf"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/utils"
@@ -12,15 +12,15 @@ import (
 // GetAppDetails retrieves application details
 func GetAppDetails(c *gin.Context) {
 	appId := econf.GetString("shimoSDK.appId")
-	auth := utils.GetAuth(getUserIdFromToken(c), true)
-	params := sdkapi.GetAppDetailParams{
-		Auth:  auth,
-		AppId: appId,
+	auth := utils.GetAuth(getUserIdFromToken(c))
+	params := sdkapi.GetAppDetailReq{
+		Metadata: auth,
+		AppID:    appId,
 	}
 
-	details, err := invoker.SdkMgr.GetAppDetail(params)
+	details, err := invoker.SdkMgr.GetAppDetail(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, details.Resp.Body(), details.Resp.StatusCode())
+		handleSdkMgrError(c, details.Response().Body(), details.Response().StatusCode())
 		return
 	}
 
@@ -33,17 +33,16 @@ func PutEndpointUrl(c *gin.Context) {
 	if url == "" {
 		url = "http://svc-sdk2-demo:9001/callback"
 	}
-	auth := utils.GetAuth(getUserIdFromToken(c), true)
-	params := sdkapi.UpdateCallbackUrlParams{
-		Auth:                     auth,
-		UpdateCallbackUrlReqBody: sdkapi.UpdateCallbackUrlReqBody{Url: url},
-		AppId:                    appId,
+	auth := utils.GetAuth(getUserIdFromToken(c))
+	params := sdkapi.UpdateCallbackURLReq{
+		Metadata:                 auth,
+		UpdateCallbackURLReqBody: sdkapi.UpdateCallbackURLReqBody{URL: url},
+		AppID:                    appId,
 	}
 
-	resp, err := invoker.SdkMgr.UpdateCallbackUrl(params)
-
+	resp, err := invoker.SdkMgr.UpdateCallbackURL(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, resp.Resp.Body(), resp.Resp.StatusCode())
+		handleSdkMgrError(c, resp.Response().Body(), resp.Response().StatusCode())
 		return
 	}
 

@@ -8,10 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gotomicro/ego/core/econf"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 	"golang.org/x/crypto/bcrypt"
 
-	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/models/db"
 	"sdk-demo-go/pkg/server/http/middlewares"
@@ -20,7 +19,7 @@ import (
 
 // Auth authenticates a user and returns their information with app details
 func Auth(c *gin.Context) {
-	anonUser := LoadAnonymousUser(consts.ANONYMOUS)
+	anonUser := LoadAnonymousUser(sdkapi.Anonymous)
 	token := middlewares.FindAccessToken(c)
 	if token == "" {
 		c.JSON(http.StatusOK, anonUser)
@@ -40,14 +39,14 @@ func Auth(c *gin.Context) {
 		return
 	}
 
-	auth := utils.GetAuth(user.ID, true)
-	params := sdkapi.GetAppDetailParams{
-		Auth:  auth,
-		AppId: econf.GetString("shimoSDK.appId"),
+	auth := utils.GetAuth(user.ID)
+	params := sdkapi.GetAppDetailReq{
+		Metadata: auth,
+		AppID:    econf.GetString("shimoSDK.appId"),
 	}
-	detailsRes, err := invoker.SdkMgr.GetAppDetail(params)
+	detailsRes, err := invoker.SdkMgr.GetAppDetail(c.Request.Context(), params)
 	if err != nil {
-		c.JSON(detailsRes.Resp.StatusCode(), gin.H{"message": "failed to get app details"})
+		c.JSON(detailsRes.Response().StatusCode(), gin.H{"message": "failed to get app details"})
 		return
 	}
 
@@ -61,12 +60,17 @@ func Auth(c *gin.Context) {
 	})
 }
 
+const (
+	// Me represents the current user in API requests
+	Me = "me"
+)
+
 // GetUserById retrieves a user by their ID or "me" for the current user
 func GetUserById(c *gin.Context) {
 	id := c.Param("userId")
 
 	var userId int64
-	if id == consts.ME {
+	if id == Me {
 		userId = getUserIdFromToken(c)
 	} else {
 		userId = getInt64FromParam(c, "userId")
@@ -166,13 +170,12 @@ func SignIn(c *gin.Context) {
 	}
 
 	tokenStr := utils.SignUserJWT(user.ID)
-
-	auth := utils.GetAuth(user.ID, true)
-	params := sdkapi.GetAppDetailParams{
-		Auth:  auth,
-		AppId: econf.GetString("shimoSDK.appId"),
+	auth := utils.GetAuth(user.ID)
+	params := sdkapi.GetAppDetailReq{
+		Metadata: auth,
+		AppID:    econf.GetString("shimoSDK.appId"),
 	}
-	appDetails, _ := invoker.SdkMgr.GetAppDetail(params)
+	appDetails, _ := invoker.SdkMgr.GetAppDetail(c.Request.Context(), params)
 
 	c.JSON(http.StatusOK, gin.H{
 		"user":                 user,
@@ -249,12 +252,12 @@ func SignUp(c *gin.Context) {
 	}
 
 	tokenStr := utils.SignUserJWT(user.ID)
-	auth := utils.GetAuth(user.ID, true)
-	params := sdkapi.GetAppDetailParams{
-		Auth:  auth,
-		AppId: econf.GetString("shimoSDK.appId"),
+	auth := utils.GetAuth(user.ID)
+	params := sdkapi.GetAppDetailReq{
+		Metadata: auth,
+		AppID:    econf.GetString("shimoSDK.appId"),
 	}
-	appDetails, _ := invoker.SdkMgr.GetAppDetail(params)
+	appDetails, _ := invoker.SdkMgr.GetAppDetail(c.Request.Context(), params)
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{

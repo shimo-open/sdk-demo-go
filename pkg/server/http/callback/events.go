@@ -5,7 +5,8 @@ import (
 	"io"
 	"strconv"
 
-	"sdk-demo-go/pkg/consts"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
+
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/models/db"
 
@@ -57,8 +58,7 @@ func (e EventBody) GetUserId() string {
 }
 
 func PushEvent(c *gin.Context) {
-	eventType := c.GetHeader(consts.SDKEVENT)
-
+	eventType := c.GetHeader(sdkapi.HeaderShimoSdkEvent)
 	rawBody, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(400, gin.H{"message": err.Error()})

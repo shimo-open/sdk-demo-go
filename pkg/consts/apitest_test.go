@@ -9,6 +9,7 @@ import (
 	"github.com/ego-component/excelplus"
 	"github.com/gotomicro/cetus/l"
 	"github.com/gotomicro/ego/core/elog"
+	"github.com/shimo-open/sdk-kit-go"
 )
 
 type fileStatus struct {
@@ -20,8 +21,8 @@ type fileStatus struct {
 
 func TestSaveExcel(t *testing.T) {
 	testRes := AllApiTestRes{
-		BaseTestResMap: map[FileType]BaseTestRes{
-			FileTypeSpreadsheet: BaseTestRes{
+		BaseTestResMap: map[sdk.FileType]BaseTestRes{
+			sdk.FileTypeSpreadsheet: BaseTestRes{
 				CreateFileRes:            SingleApiTestRes{ApiName: "CreateFileRes", Success: true, HttpCode: 200, HttpResp: "File created", ErrMsg: ""},
 				CreateCopyRes:            SingleApiTestRes{ApiName: "CreateCopyRes", Success: true, HttpCode: 200, HttpResp: "Copy created", ErrMsg: ""},
 				DeleteFileRes:            SingleApiTestRes{ApiName: "DeleteFileRes", Success: true, HttpCode: 204, HttpResp: "", ErrMsg: ""},
@@ -34,19 +35,19 @@ func TestSaveExcel(t *testing.T) {
 				GetMentionAtListRes:      SingleApiTestRes{ApiName: "GetMentionAtListRes", Success: true, HttpCode: 200, HttpResp: "Mention list retrieved", ErrMsg: ""},
 			},
 		},
-		FileIOResMap: map[FileType]FileIORes{
-			FileTypeSpreadsheet: {
-				ImportFileRes: map[FileType]map[string]ImportFileRes{
-					FileTypeDocument: {
+		FileIOResMap: map[sdk.FileType]FileIORes{
+			sdk.FileTypeSpreadsheet: {
+				ImportFileRes: map[sdk.FileType]map[string]ImportFileRes{
+					sdk.FileTypeDocument: {
 						"docx": {},
 						"doc":  {Success: false, PathStr: "", FormData: ""},
 					},
 				},
-				ExportFileRes: map[FileType]map[string]ExportFileRes{
-					FileTypeDocument: {
+				ExportFileRes: map[sdk.FileType]map[string]ExportFileRes{
+					sdk.FileTypeDocument: {
 						"docx": {Success: true, PathStr: "", BodyReq: ""},
 					},
-					FileTypeDocPro: {
+					sdk.FileTypeDocPro: {
 						"wps": {Success: true, PathStr: "", BodyReq: ""},
 					},
 				},
@@ -88,16 +89,16 @@ func TestSaveExcel(t *testing.T) {
 			if err != nil {
 				elog.Panic("BaseTestResMap sheet error", l.E(err))
 			}
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].CreateFileRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].CreateCopyRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].DeleteFileRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].CreatePreviewRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].GetPreviewRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].GetHistoryListRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].GetRevisionListRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].GetPlainTextRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].GetPlainTextWordCountRes)
-			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[FileTypeSpreadsheet].GetMentionAtListRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].CreateFileRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].CreateCopyRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].DeleteFileRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].CreatePreviewRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].GetPreviewRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].GetHistoryListRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].GetRevisionListRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].GetPlainTextRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].GetPlainTextWordCountRes)
+			BaseTestBody = append(BaseTestBody, testRes.BaseTestResMap[sdk.FileTypeSpreadsheet].GetMentionAtListRes)
 			for _, value := range BaseTestBody {
 				err := BaseTestSheet.SetRow(value)
 				if err != nil {

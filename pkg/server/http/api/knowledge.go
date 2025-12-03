@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gotomicro/ego/core/econf"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/models/db"
@@ -34,7 +35,7 @@ type Module struct {
 // GetAiAssets fetches AI static assets
 func GetAiAssets(c *gin.Context) {
 	// Adjust the API path
-	url := fmt.Sprintf("%s/api/assets", econf.GetString("shimoSDK.host"))
+	url := econf.GetString("shimoSDK.host") + sdkapi.ApiAiAssets
 	body, err := NewHttpRequest(c, url, "GET")
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{
@@ -66,7 +67,7 @@ func GetAiAssets(c *gin.Context) {
 			break
 		}
 	}
-	assetsUrl := fmt.Sprintf("%s/shimo-assets/static-uploader/sdk-iframe-assets.json", econf.GetString("shimoSDK.host"))
+	assetsUrl := econf.GetString("shimoSDK.host") + sdkapi.ApiIframeAssets
 	assetsBody, err := NewHttpRequest(c, assetsUrl, "GET")
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{
@@ -99,9 +100,10 @@ func GetAiAssets(c *gin.Context) {
 			"message": fmt.Sprintf("find user by id error: %s", err.Error()),
 		})
 	}
+
 	auth := utils.GetAuth(userId)
-	result["token"] = auth.Token
-	result["signature"] = auth.Signature
+	result["token"] = auth.WebofficeToken
+	result["signature"] = invoker.SdkMgr.Sign(5*time.Minute, sdkapi.ScopeDefault)
 	result["user"] = user
 
 	// Return the filtered result
@@ -305,8 +307,8 @@ func ImportFileToKnowledgeBase(c *gin.Context) {
 	}
 	// Insert a row into the AI knowledge base table
 	auth := utils.GetAuth(userId)
-	iFile := sdkapi.ImportFileToAiKnowledgeBaseParams{
-		Auth: auth,
+	iFile := sdkapi.ImportFileToAiKnowledgeBaseReq{
+		Metadata: auth,
 		ImportFileToAiKnowledgeBaseReqBody: sdkapi.ImportFileToAiKnowledgeBaseReqBody{
 			KnowledgeBaseGuid: params.KnowledgeBaseGuid,
 			ImportType:        params.ImportType,
@@ -315,9 +317,9 @@ func ImportFileToKnowledgeBase(c *gin.Context) {
 			DownloadUrl:       params.DownloadUrl,
 		},
 	}
-	res, sdkErr := invoker.SdkMgr.ImportFileToAiKnowledgeBase(iFile)
+	res, sdkErr := invoker.SdkMgr.ImportFileToAiKnowledgeBase(c.Request.Context(), iFile)
 	if sdkErr != nil {
-		c.JSON(res.Resp.StatusCode(), gin.H{"error": sdkErr.Error()})
+		c.JSON(res.Response().StatusCode(), gin.H{"error": sdkErr.Error()})
 		return
 	}
 	// Insert a row into the local knowledge base
@@ -390,17 +392,17 @@ func DeleteFileFromKnowledgeBase(c *gin.Context) {
 	}
 	userId := getUserIdFromToken(c)
 	auth := utils.GetAuth(userId)
-	params := sdkapi.DeleteFileFromAiKnowledgeBaseParams{
-		Auth: auth,
+	params := sdkapi.DeleteFileFromAiKnowledgeBaseReq{
+		Metadata: auth,
 		DeleteFileFromAiKnowledgeBaseReqBody: sdkapi.DeleteFileFromAiKnowledgeBaseReqBody{
 			KnowledgeBaseGuid: guid,
 			FileGuid:          fileGuid,
 		},
 	}
 
-	res, err := invoker.SdkMgr.DeleteFileFromAiKnowledgeBase(params)
+	res, err := invoker.SdkMgr.DeleteFileFromAiKnowledgeBase(c.Request.Context(), params)
 	if err != nil {
-		c.JSON(res.Resp.StatusCode(), gin.H{"error": err.Error()})
+		c.JSON(res.Response().StatusCode(), gin.H{"error": err.Error()})
 		return
 	}
 	// Delete the local data
@@ -480,8 +482,8 @@ func ImportFileToKnowledgeBaseV2(c *gin.Context) {
 
 	// Call the v2 SDK API
 	auth := utils.GetAuth(userId)
-	iFile := sdkapi.ImportFileToAiKnowledgeBaseV2Params{
-		Auth: auth,
+	iFile := sdkapi.ImportFileToAiKnowledgeBaseV2Req{
+		Metadata: auth,
 		ImportFileToAiKnowledgeBaseV2ReqBody: sdkapi.ImportFileToAiKnowledgeBaseV2ReqBody{
 			KnowledgeBaseGuid: params.KnowledgeBaseGuid,
 			ImportType:        params.ImportType,
@@ -490,15 +492,15 @@ func ImportFileToKnowledgeBaseV2(c *gin.Context) {
 			DownloadUrl:       params.DownloadUrl,
 		},
 	}
-	res, sdkErr := invoker.SdkMgr.ImportFileToAiKnowledgeBaseV2(iFile)
+	res, sdkErr := invoker.SdkMgr.ImportFileToAiKnowledgeBaseV2(c.Request.Context(), iFile)
 	if sdkErr != nil {
-		c.JSON(res.Resp.StatusCode(), gin.H{"error": sdkErr.Error()})
+		c.JSON(res.Response().StatusCode(), gin.H{"error": sdkErr.Error()})
 		return
 	}
 
 	// Return the task ID so the front end can poll progress
 	c.JSON(200, gin.H{
-		"taskId":            res.TaskId,
+		"taskId":            res.TaskID,
 		"fileGuid":          fileGuid,
 		"knowledgeBaseGuid": params.KnowledgeBaseGuid,
 	})
@@ -519,16 +521,16 @@ func ImportFileToKnowledgeBaseV2Progress(c *gin.Context) {
 	auth := utils.GetAuth(userId)
 
 	// Ask the SDK for the current progress
-	params := sdkapi.GetImportFileToAiProgressV2Params{
-		Auth: auth,
+	params := sdkapi.GetImportFileToAiProgressV2Req{
+		Metadata: auth,
 		GetImportFileToAiProgressV2ReqBody: sdkapi.GetImportFileToAiProgressV2ReqBody{
-			TaskId: req.TaskId,
+			TaskID: req.TaskId,
 		},
 	}
 
-	res, sdkErr := invoker.SdkMgr.GetImportFileToAiProgressV2(params)
+	res, sdkErr := invoker.SdkMgr.GetImportFileToAiProgressV2(c.Request.Context(), params)
 	if sdkErr != nil {
-		c.JSON(res.Resp.StatusCode(), gin.H{"error": sdkErr.Error()})
+		c.JSON(res.Response().StatusCode(), gin.H{"error": sdkErr.Error()})
 		return
 	}
 

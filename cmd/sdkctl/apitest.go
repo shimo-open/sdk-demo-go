@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/gotomicro/ego/core/econf"
 	"github.com/gotomicro/ego/core/elog"
 	"github.com/pkg/errors"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
-	sdkcommon "github.com/shimo-open/sdk-kit-go/model/common"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 
 	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/invoker"
@@ -26,40 +26,40 @@ import (
 )
 
 // TestCreatePreview creates a file preview
-func TestCreatePreview(ctx context.Context, fileId string) (testRes consts.SingleApiTestRes) {
+func TestCreatePreview(ctx context.Context, fileID string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiCreatePreview
 	printStartTestMsg(apiName.Name())
 	auth := utils.GetAuth(userId)
-	params := sdkapi.CreatePreviewParams{
-		Auth:   auth,
-		FileId: fileId,
+	params := sdkapi.CreatePreviewReq{
+		Metadata: auth,
+		FileID:   fileID,
 	}
 	// Create the preview
-	resp, err := invoker.SdkMgr.CreatePreview(params)
+	res, err := invoker.SdkMgr.CreatePreview(ctx, params)
 	if err != nil {
-		mgrErrHandler(err, string(resp.Resp.Body()))
+		mgrErrHandler(err, string(res.Response().Body()))
 	}
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestGetPreview TODO open the file preview (consider chromeless)
-func TestGetPreview(ctx context.Context, fileId string) (testRes consts.SingleApiTestRes) {
+func TestGetPreview(ctx context.Context, fileID string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetPreview
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.CreatePreviewParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileId,
+	params := sdkapi.CreatePreviewReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
 	}
 	// Create the preview
-	resp, err := invoker.SdkMgr.CreatePreview(params)
+	res, err := invoker.SdkMgr.CreatePreview(ctx, params)
 	if err != nil {
 		errHandler(err)
 	}
 
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -100,31 +100,31 @@ func TestCreateFile(ctx context.Context, fileName string, fileType string, shimo
 
 	fileGuid = file.Guid
 	auth := utils.GetAuth(userId)
-	cFile := sdkapi.CreateFileParams{
-		Auth:     auth,
-		FileType: sdkcommon.CollabFileType(file.ShimoType),
-		Lang:     sdkcommon.Lang(lang),
-		FileId:   file.Guid,
+	cFile := sdkapi.CreateFileReq{
+		Metadata: auth,
+		FileType: sdkapi.CollabFileType(file.ShimoType),
+		Lang:     sdkapi.Lang(lang),
+		FileID:   file.Guid,
 	}
-	resp, err := invoker.SdkMgr.CreateFile(cFile)
+	res, err := invoker.SdkMgr.CreateFile(ctx, cFile)
 	if err != nil {
 		// Remove the record if creation fails
 		_ = db.RemoveFileById(invoker.DB, file.ID)
-		mgrErrHandler(err, string(resp.Resp.Body()))
+		mgrErrHandler(err, string(res.Response().Body()))
 	}
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestCreateFileCopy creates a copy of a collaborative document
-func TestCreateFileCopy(ctx context.Context, fileId string) (testRes consts.SingleApiTestRes) {
+func TestCreateFileCopy(ctx context.Context, fileID string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiCreateFileCopy
 	printStartTestMsg(apiName.Name())
 	userId := getUserId()
 
 	// Find the file to copy
-	file, err := db.FindFileByGuid(invoker.DB, fileId)
+	file, err := db.FindFileByGuid(invoker.DB, fileID)
 	if err != nil {
 		errHandler(err)
 		return
@@ -146,40 +146,40 @@ func TestCreateFileCopy(ctx context.Context, fileId string) (testRes consts.Sing
 		return
 	}
 	auth := utils.GetAuth(userId)
-	params := sdkapi.CreateFileCopyParams{
-		Auth:         auth,
-		OriginFileId: fileId,
-		TargetFileId: newFile.Guid,
+	params := sdkapi.CreateFileCopyReq{
+		Metadata:     auth,
+		OriginFileID: fileID,
+		TargetFileID: newFile.Guid,
 	}
-	resp, err := invoker.SdkMgr.CreateFileCopy(params)
+	res, err := invoker.SdkMgr.CreateFileCopy(ctx, params)
 
 	// Call the API and capture the result
-	mgrErrHandler(err, string(resp.Resp.Body()))
+	mgrErrHandler(err, string(res.Response().Body()))
 
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestDeleteFile deletes a collaborative document
-func TestDeleteFile(ctx context.Context, fileId string) (testRes consts.SingleApiTestRes) {
+func TestDeleteFile(ctx context.Context, fileID string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiDeleteFile
 	printStartTestMsg(apiName.Name())
-	file, err := db.FindFileByGuid(invoker.DB, fileId)
+	file, err := db.FindFileByGuid(invoker.DB, fileID)
 	if err != nil {
 		errHandler(err)
 		return
 	}
 
-	var resp sdkapi.RawResponse
+	var res sdkapi.DeleteFileRes
 	if file.IsShimoFile == 1 {
 		auth := utils.GetAuth(userId)
-		params := sdkapi.DeleteFileParams{
-			Auth:   auth,
-			FileId: fileId,
+		params := sdkapi.DeleteFileReq{
+			Metadata: auth,
+			FileID:   fileID,
 		}
-		resp, err = invoker.SdkMgr.DeleteFile(params)
-		mgrErrHandler(err, string(resp.Resp.Body()))
+		res, err = invoker.SdkMgr.DeleteFile(ctx, params)
+		mgrErrHandler(err, string(res.Response().Body()))
 	} else {
 		err = invoker.Services.AwosService.Remove(file.Guid)
 		if err != nil {
@@ -188,9 +188,9 @@ func TestDeleteFile(ctx context.Context, fileId string) (testRes consts.SingleAp
 		}
 	}
 
-	_ = db.RemoveFileByGuid(invoker.DB, fileId)
+	_ = db.RemoveFileByGuid(invoker.DB, fileID)
 
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -220,24 +220,24 @@ func TestImportFile(ctx context.Context, filePath string, fileName string, shimo
 		return
 	}
 	body := sdkapi.ImportFileReqBody{
-		FileId:   file.Guid,
+		FileID:   file.Guid,
 		Type:     file.ShimoType,
 		File:     f,
 		FileName: fileName,
 	}
-	params := sdkapi.ImportFileParams{
-		Auth:              utils.GetAuth(userId),
+	params := sdkapi.ImportFileReq{
+		Metadata:          utils.GetAuth(userId),
 		ImportFileReqBody: body,
 	}
 	// Upload the file via the SDK
-	resp, err := invoker.SdkMgr.ImportFile(params)
+	res, err := invoker.SdkMgr.ImportFile(ctx, params)
 	if err != nil {
 		fmt.Println("invoker.SdkMgr.ImportFile err:" + err.Error())
 		// Roll back the newly created file
 		_ = db.RemoveFileById(invoker.DB, file.ID)
-		mgrErrHandler(err, string(resp.Resp.Body()))
+		mgrErrHandler(err, string(res.Response().Body()))
 	}
-	return resp.Data.TaskId, file.Guid, resp.Resp.StatusCode(), err
+	return res.Data.TaskID, file.Guid, res.Response().StatusCode(), err
 }
 
 // TestImportFileByUrl imports a file via URL
@@ -258,20 +258,20 @@ func TestImportFileByUrl(ctx context.Context, url string, fileName string, fileT
 	}
 
 	body := sdkapi.ImportFileReqBody{
-		FileId:   file.Guid,
+		FileID:   file.Guid,
 		Type:     file.ShimoType,
 		FileUrl:  url,
 		FileName: file.Name,
 	}
-	params := sdkapi.ImportFileParams{
-		Auth:              utils.GetAuth(userId),
+	params := sdkapi.ImportFileReq{
+		Metadata:          utils.GetAuth(userId),
 		ImportFileReqBody: body,
 	}
 	// Upload the file via the SDK
-	resp, err := invoker.SdkMgr.ImportFile(params)
+	res, err := invoker.SdkMgr.ImportFile(ctx, params)
 	if err != nil {
 		_ = db.RemoveFileByGuid(invoker.DB, file.Guid)
-		mgrErrHandler(err, string(resp.Resp.Body()))
+		mgrErrHandler(err, string(res.Response().Body()))
 	}
 	return
 }
@@ -281,62 +281,62 @@ func TestImportFileProgress(ctx context.Context, taskId string) (importSuccess b
 	apiName := consts.ShimoSdkApiImportFileProgress
 	printStartTestMsg(apiName.Name())
 	auth := utils.GetAuth(userId)
-	params := sdkapi.GetImportProgParams{
-		Auth:   auth,
-		TaskId: taskId,
+	params := sdkapi.GetImportProgReq{
+		Metadata: auth,
+		TaskId:   taskId,
 	}
 	// Fetch the upload progress
-	resp, err := invoker.SdkMgr.GetImportProgress(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	return resp.Data.Progress == 100, resp.Resp.StatusCode(), err
+	res, err := invoker.SdkMgr.GetImportProgress(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	return res.Data.Progress == 100, res.Response().StatusCode(), err
 }
 
 // TestExportFile exports a file
-func TestExportFile(ctx context.Context, fileId string, exportType string) (taskId string) {
+func TestExportFile(ctx context.Context, fileID string, exportType string) (taskId string) {
 	printStartTestMsg("导出文件")
 	auth := utils.GetAuth(userId)
-	params := sdkapi.ExportFileParams{
-		Auth:   auth,
-		FileId: fileId,
-		Type:   exportType,
+	params := sdkapi.ExportFileReq{
+		Metadata: auth,
+		FileID:   fileID,
+		Type:     exportType,
 	}
-	resp, err := invoker.SdkMgr.ExportFile(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
+	res, err := invoker.SdkMgr.ExportFile(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
 
-	return resp.Data.TaskId
+	return res.Data.TaskID
 }
 
 // TestExportFileProgress checks export progress
 func TestExportFileProgress(ctx context.Context, taskId string) (exportSuccess bool, statusCode int, err error) {
 	printStartTestMsg("导出进度")
 	auth := utils.GetAuth(userId)
-	params := sdkapi.GetExportProgParams{
-		Auth:   auth,
-		TaskId: taskId,
+	params := sdkapi.GetExportProgReq{
+		Metadata: auth,
+		TaskId:   taskId,
 	}
-	resp, err := invoker.SdkMgr.GetExportProgress(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	fmt.Print(fmt.Sprintf(" 进度：%d ", resp.Data.Progress))
-	return resp.Data.Progress == 100, resp.Resp.StatusCode(), err
+	res, err := invoker.SdkMgr.GetExportProgress(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	fmt.Print(fmt.Sprintf(" 进度：%d ", res.Data.Progress))
+	return res.Data.Progress == 100, res.Response().StatusCode(), err
 }
 
 // TestExportTableAsSheets exports application tables to Excel
-func TestExportTableAsSheets(ctx context.Context, fileId string) (testRes consts.SingleApiTestRes) {
+func TestExportTableAsSheets(ctx context.Context, fileID string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiExportTableAsExcel
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.ExportTableSheetsParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileId,
+	params := sdkapi.ExportTableSheetsReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
 	}
-	resp, err := invoker.SdkMgr.ExportTableSheets(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.ExportTableSheets(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestGetFilePlainText retrieves the plain-text content of a document
-func TestGetFilePlainText(ctx context.Context, fileId string) (testRes consts.SingleApiTestRes) {
+func TestGetFilePlainText(ctx context.Context, fileID string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetFilePlainText
 	printStartTestMsg(apiName.Name())
@@ -350,18 +350,18 @@ func TestGetFilePlainText(ctx context.Context, fileId string) (testRes consts.Si
 		},
 	}
 	// Invoke the API and collect the result
-	params := sdkapi.GetPlainTextParams{
-		FileId: fileId,
-		Auth:   utils.GetAuth(userId),
+	params := sdkapi.GetPlainTextReq{
+		FileID:   fileID,
+		Metadata: utils.GetAuth(userId),
 	}
-	resp, err := invoker.SdkMgr.GetPlainText(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), validators)
+	res, err := invoker.SdkMgr.GetPlainText(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), validators)
 	return
 }
 
 // TestGetFilePlainTextWC retrieves the plain-text word count
-func TestGetFilePlainTextWC(ctx context.Context, fileId string) (testRes consts.SingleApiTestRes) {
+func TestGetFilePlainTextWC(ctx context.Context, fileID string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetFilePlainTextWordCount
 	printStartTestMsg(apiName.Name())
@@ -373,18 +373,18 @@ func TestGetFilePlainTextWC(ctx context.Context, fileId string) (testRes consts.
 			Message: "wordCount 字段应存在且不为空",
 		},
 	}
-	params := sdkapi.GetPlainTextWCParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileId,
+	params := sdkapi.GetPlainTextWCReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
 	}
-	resp, err := invoker.SdkMgr.GetPlainTextWC(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), validators)
+	res, err := invoker.SdkMgr.GetPlainTextWC(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), validators)
 	return
 }
 
 // TestGetDocSidebarInfo fetches the history list
-func TestGetDocSidebarInfo(ctx context.Context, fileId string, page int, size int) (testRes consts.SingleApiTestRes) {
+func TestGetDocSidebarInfo(ctx context.Context, fileID string, page int, size int) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetDocSidebarInfo
 	printStartTestMsg(apiName.Name())
@@ -414,50 +414,50 @@ func TestGetDocSidebarInfo(ctx context.Context, fileId string, page int, size in
 	if size < 1 {
 		size = 10
 	}
-	params := sdkapi.GetHistoryListParams{
-		Auth:     utils.GetAuth(userId),
-		FileId:   fileId,
+	params := sdkapi.GetHistoryListReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
 		PageSize: size,
 		Count:    (page - 1) * size,
 	}
-	resp, err := invoker.SdkMgr.GetHistoryList(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), validators)
+	res, err := invoker.SdkMgr.GetHistoryList(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), validators)
 	return
 }
 
 // TestGetRevision retrieves the revision list
-func TestGetRevision(ctx context.Context, fileId string) (testRes consts.SingleApiTestRes) {
+func TestGetRevision(ctx context.Context, fileID string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetRevision
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.GetRevisionListParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileId,
+	params := sdkapi.GetRevisionListReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
 	}
-	resp, _, err := invoker.SdkMgr.GetRevisionList(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.GetRevisionList(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
-func TestGetExcelContent(ctx context.Context, fileId string, rg string, validators []utils.Validator) (testRes consts.SingleApiTestRes) {
+func TestGetExcelContent(ctx context.Context, fileID string, rg string, validators []utils.Validator) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetExcelContent
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.GetTableContentParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileId,
-		Rg:     rg,
+	params := sdkapi.GetTableContentReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
+		Rg:       rg,
 	}
-	resp, err := invoker.SdkMgr.GetTableContent(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), validators)
+	res, err := invoker.SdkMgr.GetTableContent(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), validators)
 	return
 }
 
 // TestUpdateExcelContent updates spreadsheet content
-func TestUpdateExcelContent(ctx context.Context, fileId string, rg string, values []string) (testRes consts.SingleApiTestRes) {
+func TestUpdateExcelContent(ctx context.Context, fileID string, rg string, values []string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiUpdateExcelContent
 	printStartTestMsg(apiName.Name())
@@ -466,9 +466,9 @@ func TestUpdateExcelContent(ctx context.Context, fileId string, rg string, value
 		errHandler(err)
 		return
 	}
-	params := sdkapi.UpdateTableContentParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileId,
+	params := sdkapi.UpdateTableContentReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
 		UpdateTableContentRequestBody: sdkapi.UpdateTableContentRequestBody{
 			Rg: rg,
 			Resource: struct {
@@ -476,14 +476,14 @@ func TestUpdateExcelContent(ctx context.Context, fileId string, rg string, value
 			}{Values: realValues},
 		},
 	}
-	resp, err := invoker.SdkMgr.UpdateTableContent(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.UpdateTableContent(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestAppendExcelContent appends spreadsheet content
-func TestAppendExcelContent(ctx context.Context, fileId string, rg string, values []string) (testRes consts.SingleApiTestRes) {
+func TestAppendExcelContent(ctx context.Context, fileID string, rg string, values []string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiAppendExcelContent
 	printStartTestMsg(apiName.Name())
@@ -492,9 +492,9 @@ func TestAppendExcelContent(ctx context.Context, fileId string, rg string, value
 		errHandler(err)
 		return
 	}
-	params := sdkapi.AppendTableContentParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileId,
+	params := sdkapi.AppendTableContentReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
 		AppendTableContentReqBody: sdkapi.AppendTableContentReqBody{
 			Rg: rg,
 			Resource: sdkapi.Resource{
@@ -502,92 +502,92 @@ func TestAppendExcelContent(ctx context.Context, fileId string, rg string, value
 			},
 		},
 	}
-	resp, err := invoker.SdkMgr.AppendTableContent(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.AppendTableContent(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestDeleteExcelRows deletes spreadsheet rows
-func TestDeleteExcelRows(ctx context.Context, fileId string, sheetName string, index int) (testRes consts.SingleApiTestRes) {
+func TestDeleteExcelRows(ctx context.Context, fileID string, sheetName string, index int) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiDeleteExcelRows
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.DeleteTableRowParams{
-		Auth:      utils.GetAuth(userId),
-		FileId:    fileId,
+	params := sdkapi.DeleteTableRowReq{
+		Metadata:  utils.GetAuth(userId),
+		FileID:    fileID,
 		SheetName: sheetName,
 		Index:     index,
 		Count:     1,
 	}
-	resp, err := invoker.SdkMgr.DeleteTableRow(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.DeleteTableRow(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestCreateExcelSheet creates a new spreadsheet sheet
-func TestCreateExcelSheet(ctx context.Context, fileId string, sheetName string) (testRes consts.SingleApiTestRes) {
+func TestCreateExcelSheet(ctx context.Context, fileID string, sheetName string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiCreateExcelSheet
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.AddTableSheetParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileId,
+	params := sdkapi.AddTableSheetReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileID,
 		AddTableSheetReqBody: sdkapi.AddTableSheetReqBody{
 			Name: sheetName,
 		},
 	}
-	resp, err := invoker.SdkMgr.AddTableSheet(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.AddTableSheet(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestGetDocProBookmark reads a bookmark in a document pro file
-func TestGetDocProBookmark(ctx context.Context, fileId string, bookmark []string) (testRes consts.SingleApiTestRes) {
+func TestGetDocProBookmark(ctx context.Context, fileID string, bookmark []string) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetDocProBookmark
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.ReadBookmarkContentParams{
-		Auth:      utils.GetAuth(userId),
-		FileId:    fileId,
+	params := sdkapi.ReadBookmarkContentReq{
+		Metadata:  utils.GetAuth(userId),
+		FileID:    fileID,
 		Bookmarks: bookmark,
 	}
-	resp, err := invoker.SdkMgr.ReadBookmarkContent(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.ReadBookmarkContent(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestReplaceDocProBookmark replaces a bookmark in a document pro file
-func TestReplaceDocProBookmark(ctx context.Context, fileId string, req sdkapi.RepBookmarkContentReqBody) (testRes consts.SingleApiTestRes) {
+func TestReplaceDocProBookmark(ctx context.Context, fileID string, req sdkapi.RepBookmarkContentReqBody) (testRes consts.SingleApiTestRes) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiReplaceDocProBookmark
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.RepBookmarkContentParams{
-		Auth:                      utils.GetAuth(userId),
-		FileId:                    fileId,
+	params := sdkapi.RepBookmarkContentReq{
+		Metadata:                  utils.GetAuth(userId),
+		FileID:                    fileID,
 		RepBookmarkContentReqBody: req,
 	}
-	resp, err := invoker.SdkMgr.ReplaceBookmarkContent(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.ReplaceBookmarkContent(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
 // TestGetAppDetails fetches app details
-func TestGetAppDetails(ctx context.Context, appId string) (resp sdkapi.GetAppDetailRespBody, testRes consts.SingleApiTestRes, err error) {
+func TestGetAppDetails(ctx context.Context, appId string) (res sdkapi.GetAppDetailRes, testRes consts.SingleApiTestRes, err error) {
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetAppDetails
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.GetAppDetailParams{
-		Auth:  utils.GetAuth(userId, true),
-		AppId: appId,
+	params := sdkapi.GetAppDetailReq{
+		Metadata: utils.GetAuth(userId),
+		AppID:    appId,
 	}
-	resp, err = invoker.SdkMgr.GetAppDetail(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err = invoker.SdkMgr.GetAppDetail(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -596,16 +596,16 @@ func TestUpdateAppEndpoint(ctx context.Context, appId string, url string) (testR
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiUpdateAppEndpoint
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.UpdateCallbackUrlParams{
-		Auth:  utils.GetAuth(userId, true),
-		AppId: appId,
-		UpdateCallbackUrlReqBody: sdkapi.UpdateCallbackUrlReqBody{
-			Url: url,
+	params := sdkapi.UpdateCallbackURLReq{
+		Metadata: utils.GetAuth(userId),
+		AppID:    appId,
+		UpdateCallbackURLReqBody: sdkapi.UpdateCallbackURLReqBody{
+			URL: url,
 		},
 	}
-	resp, err := invoker.SdkMgr.UpdateCallbackUrl(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.UpdateCallbackURL(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -614,14 +614,14 @@ func TestGetUsersWithStatus(ctx context.Context, page int, size int) (testRes co
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetUsersWithStatus
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.GetUserAndStatusParams{
-		Auth: utils.GetAuth(userId, true),
-		Page: page,
-		Size: size,
+	params := sdkapi.GetUserAndStatusReq{
+		Metadata: utils.GetAuth(userId),
+		Page:     page,
+		Size:     size,
 	}
-	resp, _, err := invoker.SdkMgr.GetUserAndStatus(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.GetUserAndStatus(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -630,15 +630,15 @@ func TestActivateUsers(ctx context.Context, userIds []string) (testRes consts.Si
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiActivateUsers
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.ActivateUserSeatParams{
-		Auth: utils.GetAuth(userId, true),
+	params := sdkapi.ActivateUserSeatReq{
+		Metadata: utils.GetAuth(userId),
 		ActivateUserSeatReqBody: sdkapi.ActivateUserSeatReqBody{
 			UserIds: userIds,
 		},
 	}
-	resp, err := invoker.SdkMgr.ActivateUserSeat(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.ActivateUserSeat(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -647,15 +647,15 @@ func TestDeactivateUsers(ctx context.Context, userIds []string) (testRes consts.
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiDeactivateUsers
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.CancelUserSeatParams{
-		Auth: utils.GetAuth(userId, true),
+	params := sdkapi.CancelUserSeatReq{
+		Metadata: utils.GetAuth(userId),
 		CancelUserSeatReqBody: sdkapi.CancelUserSeatReqBody{
 			UserIds: userIds,
 		},
 	}
-	resp, err := invoker.SdkMgr.CancelUserSeat(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.CancelUserSeat(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -664,17 +664,17 @@ func TestBatchSetUsersStatus(ctx context.Context, userIds []string, status int) 
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiBatchSetUsersStatus
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.BatchSetUserSeatParams{
-		Auth: utils.GetAuth(userId, true),
+	params := sdkapi.BatchSetUserSeatReq{
+		Metadata: utils.GetAuth(userId),
 		BatchSetUserSeatReqBody: sdkapi.BatchSetUserSeatReqBody{
 			UserIds: userIds,
 			Status:  status,
 		},
 		Status: status,
 	}
-	resp, err := invoker.SdkMgr.BatchSetUserSeat(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.BatchSetUserSeat(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -682,11 +682,11 @@ func TestGetSystemMessages(ctx context.Context, from, to, appIdQuery string) (te
 	// startTime := time.Now()
 	apiName := consts.ShimoSdkApiErrorCallback
 	printStartTestMsg(apiName.Name())
-	// resp, httpCode, err, pathStr, query := invoker.Shimo.GetSystemMessages(ctx, getToken(), from, to, appIdQuery)
+	// res, httpCode, err, pathStr, query := invoker.Shimo.GetSystemMessages(ctx, getToken(), from, to, appIdQuery)
 	// if err != nil {
 	// 	errHandler(err)
 	// }
-	// testRes = testResHandler(apiName, resp, httpCode, err, pathStr, query, nil, nil, time.Now().Sub(startTime).String(), startTime.Unix())
+	// testRes = testResHandler(apiName, res, httpCode, err, pathStr, query, nil, nil, time.Now().Sub(startTime).String(), startTime.Unix())
 	return
 }
 
@@ -694,13 +694,13 @@ func TestMentionAtList(ctx context.Context, fileGuid string) (testRes consts.Sin
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetMentionAt
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.GetMentionAtParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileGuid,
+	params := sdkapi.GetMentionAtReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileGuid,
 	}
-	resp, err := invoker.SdkMgr.GetMentionAt(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.GetMentionAt(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -708,13 +708,13 @@ func TestCommentCount(ctx context.Context, fileGuid string) (testRes consts.Sing
 	startTime := time.Now()
 	apiName := consts.ShimoSdkApiGetCommentCount
 	printStartTestMsg(apiName.Name())
-	params := sdkapi.GetCommentCountParams{
-		Auth:   utils.GetAuth(userId),
-		FileId: fileGuid,
+	params := sdkapi.GetCommentCountReq{
+		Metadata: utils.GetAuth(userId),
+		FileID:   fileGuid,
 	}
-	resp, err := invoker.SdkMgr.GetCommentCount(params)
-	mgrErrHandler(err, string(resp.Resp.Body()))
-	testRes = testMgrResHandler(apiName, resp, resp.RawResponse, err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
+	res, err := invoker.SdkMgr.GetCommentCount(ctx, params)
+	mgrErrHandler(err, string(res.Response().Body()))
+	testRes = testMgrResHandler(apiName, res, res.Response(), err, time.Now().Sub(startTime).String(), startTime.Unix(), nil)
 	return
 }
 
@@ -761,36 +761,13 @@ func mgrErrHandler(err error, message string) {
 	}
 }
 
-func testResHandler(apiName consts.ShimoSdkApi, rawResp interface{}, httpCode int, err error, pathStr string, query string, bodyReq interface{}, formData interface{}, timeConsuming string, startTime int64) consts.SingleApiTestRes {
-	data, _ := json.Marshal(rawResp)
-	body, _ := json.Marshal(bodyReq)
-	form, _ := json.Marshal(formData)
-	errMsg := ""
-	if err != nil {
-		errMsg = err.Error()
-	}
-	return consts.SingleApiTestRes{
-		ApiName:       apiName.Name(),
-		Success:       err == nil,
-		HttpCode:      httpCode,
-		HttpResp:      handleNullData(string(data)),
-		ErrMsg:        errMsg,
-		PathStr:       pathStr,
-		BodyReq:       handleNullData(string(body)),
-		FormData:      handleNullData(string(form)),
-		Query:         query,
-		TimeConsuming: timeConsuming,
-		StartTime:     startTime,
-	}
-}
-
-func testMgrResHandler(apiName consts.ShimoSdkApi, res interface{}, rawResp sdkapi.RawResponse, err error, timeConsuming string, startTime int64, validators []utils.Validator) consts.SingleApiTestRes {
+func testMgrResHandler(apiName consts.ShimoSdkApi, res interface{}, rawResp *resty.Response, err error, timeConsuming string, startTime int64, validators []utils.Validator) consts.SingleApiTestRes {
 	data, _ := json.Marshal(res)
-	body, _ := json.Marshal(rawResp.Resp.Request.Body)
-	form, _ := json.Marshal(rawResp.Resp.Request.FormData)
+	body, _ := json.Marshal(rawResp.Request.Body)
+	form, _ := json.Marshal(rawResp.Request.FormData)
 	errMsg := ""
 	if err != nil {
-		errMsg = string(rawResp.Resp.Body())
+		errMsg = string(rawResp.Body())
 	}
 	success := err == nil
 	// Perform assertions
@@ -837,13 +814,13 @@ func testMgrResHandler(apiName consts.ShimoSdkApi, res interface{}, rawResp sdka
 	return consts.SingleApiTestRes{
 		ApiName:       apiName.Name(),
 		Success:       success,
-		HttpCode:      rawResp.Resp.StatusCode(),
+		HttpCode:      rawResp.StatusCode(),
 		HttpResp:      handleNullData(string(data)),
 		ErrMsg:        errMsg,
-		PathStr:       rawResp.Resp.Request.URL,
+		PathStr:       rawResp.Request.URL,
 		BodyReq:       handleNullData(string(body)),
 		FormData:      handleNullData(string(form)),
-		Query:         rawResp.Resp.RawResponse.Request.URL.RawQuery,
+		Query:         rawResp.RawResponse.Request.URL.RawQuery,
 		TimeConsuming: timeConsuming,
 		StartTime:     startTime,
 	}

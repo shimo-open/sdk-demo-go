@@ -10,8 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gotomicro/ego/core/econf"
 	"github.com/gotomicro/ego/core/elog"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 
-	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/models/db"
 	"sdk-demo-go/pkg/utils"
@@ -114,9 +114,9 @@ func setAppClient(c *gin.Context, appId string) {
 
 // ValidateUserToken verifies the token and stores userId in the context
 func ValidateUserToken(c *gin.Context, token string) error {
-	if token == consts.ANONYMOUSTOKEN {
+	if token == sdkapi.AnonymousToken {
 		// Anonymous mode: form_fill with userId -1
-		c.Set("userId", consts.ANONYMOUS)
+		c.Set("userId", sdkapi.Anonymous)
 		c.Set("mode", "form_fill")
 		return nil
 	} else {

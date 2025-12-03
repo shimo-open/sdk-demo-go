@@ -38,7 +38,7 @@
 # ----------------------------------------------------------------------------
 [mysql]
   use = true                          # Enable MySQL
-  dsn = "root:123456@tcp(127.0.0.1:3306)/shimo_sdk_demo?charset=utf8mb4&parseTime=True&loc=Local" # Data Source Name (connection string)
+  dsn = "root:Aa123456.@tcp(127.0.0.1:3306)/sdk_demo?charset=utf8mb4&parseTime=True&loc=Local" # Data Source Name (connection string)
   debug = true                        # Enable debug mode (logs SQL queries)
   level = "panic"                     # Log level (panic/error/warn/info/debug)
   maxOpenConns = 100                  # Maximum open connections
@@ -78,7 +78,7 @@
   [server.http]
     port = 9301                       # HTTP server port
     enableAccessInterceptor = true    # Enable access logging
-    enableAccessInterceptorRes = true # Enable access logging with request details
+    enableAccessInterceptorReq = true # Enable access logging with request details
     enableAccessInterceptorRes = true # Enable access logging with response details
 
 # ----------------------------------------------------------------------------
@@ -88,7 +88,7 @@
   appId = ""                          # Shimo application ID signed by Shimo SDK
   appSecret = ""                      # Shimo application secret signed by Shimo SDK
   endpoint = ""                       # Shimo SDK API endpoint
-  host = ""                           # Shimo SDK host address
+  host = ""                            # Shimo SDK host address
   expire = "1d"                       # Token expiration time (e.g., 1d, 24h)
   downloadUrlPrefix = ""              # Download URL prefix
   multipleClientMode = false          # Enable multiple client mode

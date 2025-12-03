@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -21,12 +22,11 @@ import (
 	"github.com/gotomicro/ego/core/econf"
 	"github.com/gotomicro/ego/core/elog"
 	"github.com/h2non/filetype"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
-	sdkcommon "github.com/shimo-open/sdk-kit-go/model/common"
+	"github.com/shimo-open/sdk-kit-go"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 
-	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/models/db"
 	"sdk-demo-go/pkg/server/http/middlewares"
@@ -72,7 +72,7 @@ func OpenFile(c *gin.Context) {
 			"fileId":    file.Guid,
 			"signature": invoker.Services.SignatureService.Sign(appId, secret, false),
 			"appId":     appId,
-			"endpoint":  econf.GetString("shimoSDK.host"),
+			"endpoint":  econf.GetString("shimoSDK.host") + sdkapi.ApiBase,
 			"token":     utils.SignUserJWT(userId),
 		},
 	})
@@ -88,13 +88,13 @@ func GetPlainText(c *gin.Context) {
 	}
 
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.GetPlainTextParams{
-		FileId: fileGuid,
-		Auth:   auth,
+	params := sdkapi.GetPlainTextReq{
+		FileID:   fileGuid,
+		Metadata: auth,
 	}
-	resp, err := invoker.SdkMgr.GetPlainText(params)
+	resp, err := invoker.SdkMgr.GetPlainText(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, resp.Resp.Body(), resp.Resp.StatusCode())
+		handleSdkMgrError(c, resp.Response().Body(), resp.Response().StatusCode())
 		return
 	}
 
@@ -130,15 +130,15 @@ func GetDocSidebar(c *gin.Context) {
 		return
 	}
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.GetHistoryListParams{
-		Auth:     auth,
-		FileId:   fileGuid,
+	params := sdkapi.GetHistoryListReq{
+		Metadata: auth,
+		FileID:   fileGuid,
 		PageSize: query.PageSize,
 		Count:    (query.Page - 1) * query.PageSize,
 	}
-	resp, err := invoker.SdkMgr.GetHistoryList(params)
+	resp, err := invoker.SdkMgr.GetHistoryList(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, resp.Resp.Body(), resp.Resp.StatusCode())
+		handleSdkMgrError(c, resp.Response().Body(), resp.Response().StatusCode())
 		return
 	}
 	c.JSON(200, resp)
@@ -154,16 +154,16 @@ func GetFileRevision(c *gin.Context) {
 	}
 
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.GetRevisionListParams{
-		Auth:   auth,
-		FileId: fileGuid,
+	params := sdkapi.GetRevisionListReq{
+		Metadata: auth,
+		FileID:   fileGuid,
 	}
-	resp, res, err := invoker.SdkMgr.GetRevisionList(params)
+	resp, err := invoker.SdkMgr.GetRevisionList(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, resp.Resp.Body(), resp.Resp.StatusCode())
+		handleSdkMgrError(c, resp.Response().Body(), resp.Response().StatusCode())
 		return
 	}
-	c.JSON(200, res)
+	c.JSON(200, resp.Revisions)
 }
 
 func CountComments(c *gin.Context) {
@@ -174,13 +174,13 @@ func CountComments(c *gin.Context) {
 		return
 	}
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.GetCommentCountParams{
-		Auth:   auth,
-		FileId: fileGuid,
+	params := sdkapi.GetCommentCountReq{
+		Metadata: auth,
+		FileID:   fileGuid,
 	}
-	resp, err := invoker.SdkMgr.GetCommentCount(params)
+	resp, err := invoker.SdkMgr.GetCommentCount(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, resp.Resp.Body(), resp.Resp.StatusCode())
+		handleSdkMgrError(c, resp.Response().Body(), resp.Response().StatusCode())
 		return
 	}
 	c.JSON(http.StatusOK, resp)
@@ -195,13 +195,13 @@ func GetMentionAtList(c *gin.Context) {
 		return
 	}
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.GetMentionAtParams{
-		Auth:   auth,
-		FileId: file.Guid,
+	params := sdkapi.GetMentionAtReq{
+		Metadata: auth,
+		FileID:   file.Guid,
 	}
-	resp, err := invoker.SdkMgr.GetMentionAt(params)
+	resp, err := invoker.SdkMgr.GetMentionAt(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, resp.Resp.Body(), resp.Resp.StatusCode())
+		handleSdkMgrError(c, resp.Response().Body(), resp.Response().StatusCode())
 		return
 	}
 
@@ -275,17 +275,17 @@ func CreateFile(c *gin.Context) {
 	}
 
 	auth := utils.GetAuth(userId)
-	cFile := sdkapi.CreateFileParams{
-		FileType: sdkcommon.CollabFileType(file.ShimoType),
-		Auth:     auth,
-		Lang:     sdkcommon.Lang(lang),
-		FileId:   file.Guid,
+	cFile := sdkapi.CreateFileReq{
+		FileType: sdkapi.CollabFileType(file.ShimoType),
+		Metadata: auth,
+		Lang:     sdkapi.Lang(lang),
+		FileID:   file.Guid,
 	}
-	res, err := invoker.SdkMgr.CreateFile(cFile)
+	res, err := invoker.SdkMgr.CreateFile(c.Request.Context(), cFile)
 	if err != nil {
 		// Delete the record if creation fails
 		_ = db.RemoveFileById(invoker.DB, fileId)
-		handleSdkMgrError(c, res.Resp.Body(), res.Resp.StatusCode())
+		handleSdkMgrError(c, res.Response().Body(), res.Response().StatusCode())
 		return
 	}
 
@@ -403,18 +403,18 @@ func GetFileInfo(c *gin.Context) {
 	var userId int64
 	// Treat expired tokens as anonymous users
 	if token == "" {
-		userId = consts.ANONYMOUS
+		userId = sdkapi.Anonymous
 	} else {
 		err := middlewares.ValidateUserToken(c, token)
 		if err != nil {
-			userId = consts.ANONYMOUS
+			userId = sdkapi.Anonymous
 		}
 	}
 
-	if userId != consts.ANONYMOUS {
+	if userId != sdkapi.Anonymous {
 		userId = getUserIdFromToken(c)
 		if userId == 0 {
-			userId = consts.ANONYMOUS
+			userId = sdkapi.Anonymous
 		}
 	}
 
@@ -457,14 +457,14 @@ func GetFileInfo(c *gin.Context) {
 		returnConnectConfig = true
 	case "preview":
 		auth := utils.GetAuth(getUserIdFromToken(c))
-		params := sdkapi.CreatePreviewParams{
-			Auth:   auth,
-			FileId: fileGuid,
+		params := sdkapi.CreatePreviewReq{
+			Metadata: auth,
+			FileID:   fileGuid,
 		}
 		// Create the preview
-		r, e := invoker.SdkMgr.CreatePreview(params)
+		r, e := invoker.SdkMgr.CreatePreview(c.Request.Context(), params)
 		if e != nil {
-			handleSdkMgrError(c, r.Resp.Body(), r.Resp.StatusCode())
+			handleSdkMgrError(c, r.Response().Body(), r.Response().StatusCode())
 			return
 		}
 		// Return the preview URL
@@ -492,7 +492,7 @@ func GetFileInfo(c *gin.Context) {
 
 	configToken := utils.SignUserJWTWithMode(userId, mode)
 	if userId < 0 {
-		configToken = consts.ANONYMOUSTOKEN
+		configToken = sdkapi.AnonymousToken
 	}
 
 	if returnConnectConfig {
@@ -503,7 +503,7 @@ func GetFileInfo(c *gin.Context) {
 			File: *file,
 			Config: Config{
 				Signature: invoker.Services.SignatureService.Sign(econf.GetString("shimoSDK.appId"), econf.GetString("shimoSDK.appSecret"), false),
-				Endpoint:  econf.GetString("shimoSDK.host"),
+				Endpoint:  econf.GetString("shimoSDK.host") + sdkapi.ApiBase,
 				Token:     configToken,
 				UserUuid:  utils.GetHashUserUuid(userId),
 			},
@@ -547,27 +547,27 @@ func ImportFile(c *gin.Context) {
 		return
 	}
 	body := sdkapi.ImportFileReqBody{
-		FileId:   file.Guid,
+		FileID:   file.Guid,
 		Type:     file.ShimoType,
 		File:     f,
 		FileName: originalName,
 	}
-	params := sdkapi.ImportFileParams{
-		Auth:              auth,
+	params := sdkapi.ImportFileReq{
+		Metadata:          auth,
 		ImportFileReqBody: body,
 	}
 	// Upload the file through the SDK
-	res, err := invoker.SdkMgr.ImportFile(params)
+	res, err := invoker.SdkMgr.ImportFile(c.Request.Context(), params)
 	if err != nil || res.Status != 0 {
 		// Roll back the created file
 		rmErr := db.RemoveFileById(invoker.DB, file.ID)
 		if rmErr != nil {
 			elog.Warn("rollback file failed", l.E(rmErr))
 		}
-		handleSdkMgrError(c, res.Resp.Body(), res.Resp.StatusCode())
+		handleSdkMgrError(c, res.Response().Body(), res.Response().StatusCode())
 		return
 	}
-	taskId := res.Data.TaskId
+	taskId := res.Data.TaskID
 	if taskId == "" {
 		c.JSON(500, "taskId not found")
 		return
@@ -602,31 +602,31 @@ func ImportFileByUrl(c *gin.Context) {
 	// Create the SDK file
 	auth := utils.GetAuth(getUserIdFromToken(c))
 	body := sdkapi.ImportFileReqBody{
-		FileId:   file.Guid,
+		FileID:   file.Guid,
 		Type:     file.ShimoType,
 		FileName: file.Name,
 		FileUrl:  fileUrl,
 	}
-	params := sdkapi.ImportFileParams{
-		Auth:              auth,
+	params := sdkapi.ImportFileReq{
+		Metadata:          auth,
 		ImportFileReqBody: body,
 	}
-	var res sdkapi.ImportFileRespBody
+	var res sdkapi.ImportFileRes
 	if econf.GetString("shimoSDK.importByUrlVersion") == "v2" {
-		res, err = invoker.SdkMgr.ImportV2File(params)
+		res, err = invoker.SdkMgr.ImportV2File(c.Request.Context(), params)
 	} else {
-		res, err = invoker.SdkMgr.ImportFile(params)
+		res, err = invoker.SdkMgr.ImportFile(c.Request.Context(), params)
 	}
 	if err != nil || res.Status != 0 {
 		rmErr := db.RemoveFileByGuid(invoker.DB, file.Guid)
 		if rmErr != nil {
 			elog.Warn("rollback file failed", l.E(rmErr))
 		}
-		handleSdkMgrError(c, res.Resp.Body(), res.Resp.StatusCode())
+		handleSdkMgrError(c, res.Response().Body(), res.Response().StatusCode())
 		return
 	}
 
-	taskId := res.Data.TaskId
+	taskId := res.Data.TaskID
 	if taskId == "" {
 		c.JSON(500, "taskId not found")
 		return
@@ -649,12 +649,12 @@ func CheckImportProgress(c *gin.Context) {
 		return
 	}
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.GetImportProgParams{
-		Auth:   auth,
-		TaskId: taskId,
+	params := sdkapi.GetImportProgReq{
+		Metadata: auth,
+		TaskId:   taskId,
 	}
 	// Get the upload progress
-	resp, err := invoker.SdkMgr.GetImportProgress(params)
+	resp, err := invoker.SdkMgr.GetImportProgress(c.Request.Context(), params)
 	if err != nil {
 		fileId, ok := c.GetQuery("fileId")
 		if !ok {
@@ -665,7 +665,7 @@ func CheckImportProgress(c *gin.Context) {
 		if rmErr != nil {
 			elog.Warn("rollback file failed", l.E(rmErr))
 		}
-		handleSdkMgrError(c, resp.Resp.Body(), resp.Resp.StatusCode())
+		handleSdkMgrError(c, resp.Response().Body(), resp.Response().StatusCode())
 		return
 	}
 	c.JSON(200, resp)
@@ -678,16 +678,16 @@ func CheckImportUrlProgress(c *gin.Context) {
 		return
 	}
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.GetImportProgParams{
-		Auth:   auth,
-		TaskId: taskId,
+	params := sdkapi.GetImportProgReq{
+		Metadata: auth,
+		TaskId:   taskId,
 	}
-	var resp sdkapi.GetImportProgRespBody
+	var resp sdkapi.GetImportProgRes
 	var err error
 	if econf.GetString("shimoSDK.importByUrlVersion") == "v2" {
-		resp, err = invoker.SdkMgr.GetImportV2Progress(params)
+		resp, err = invoker.SdkMgr.GetImportV2Progress(c.Request.Context(), params)
 	} else {
-		resp, err = invoker.SdkMgr.GetImportProgress(params)
+		resp, err = invoker.SdkMgr.GetImportProgress(c.Request.Context(), params)
 	}
 	if err != nil {
 		fileId, ok := c.GetQuery("fileId")
@@ -699,7 +699,7 @@ func CheckImportUrlProgress(c *gin.Context) {
 		if rmErr != nil {
 			elog.Warn("rollback file failed", l.E(rmErr))
 		}
-		handleSdkMgrError(c, resp.Resp.Body(), resp.Resp.StatusCode())
+		handleSdkMgrError(c, resp.Response().Body(), resp.Response().StatusCode())
 		return
 	}
 	c.JSON(200, resp)
@@ -720,14 +720,14 @@ func ExportFile(c *gin.Context) {
 		return
 	}
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.ExportFileParams{
-		Auth:   auth,
-		FileId: fileGuid,
-		Type:   exportType,
+	params := sdkapi.ExportFileReq{
+		Metadata: auth,
+		FileID:   fileGuid,
+		Type:     exportType,
 	}
-	res, err := invoker.SdkMgr.ExportFile(params)
+	res, err := invoker.SdkMgr.ExportFile(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, res.Resp.Body(), res.Resp.StatusCode())
+		handleSdkMgrError(c, res.Response().Body(), res.Response().StatusCode())
 		return
 	}
 	c.JSON(200, res)
@@ -756,18 +756,18 @@ func DuplicateFile(c *gin.Context) {
 		return
 	}
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.CreateFileCopyParams{
-		Auth:         auth,
-		OriginFileId: fileGuid,
-		TargetFileId: newFile.Guid,
+	params := sdkapi.CreateFileCopyReq{
+		Metadata:     auth,
+		OriginFileID: fileGuid,
+		TargetFileID: newFile.Guid,
 	}
-	res, err := invoker.SdkMgr.CreateFileCopy(params)
+	res, err := invoker.SdkMgr.CreateFileCopy(c.Request.Context(), params)
 	if err != nil {
 		rmErr := db.RemoveFileById(invoker.DB, newFile.ID)
 		if rmErr != nil {
 			elog.Warn("rollback file failed", l.E(rmErr))
 		}
-		handleSdkMgrError(c, res.Resp.Body(), res.Resp.StatusCode())
+		handleSdkMgrError(c, res.Response().Body(), res.Response().StatusCode())
 		return
 	}
 	c.JSON(200, newFile)
@@ -780,13 +780,13 @@ func CheckExportFileProgress(c *gin.Context) {
 		return
 	}
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.GetExportProgParams{
-		Auth:   auth,
-		TaskId: taskId,
+	params := sdkapi.GetExportProgReq{
+		Metadata: auth,
+		TaskId:   taskId,
 	}
-	res, err := invoker.SdkMgr.GetExportProgress(params)
+	res, err := invoker.SdkMgr.GetExportProgress(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, res.Resp.Body(), res.Resp.StatusCode())
+		handleSdkMgrError(c, res.Response().Body(), res.Response().StatusCode())
 		return
 	}
 	c.JSON(200, res)
@@ -801,11 +801,11 @@ func DeleteFile(c *gin.Context) {
 	}
 	if file.IsShimoFile == 1 {
 		auth := utils.GetAuth(getUserIdFromToken(c))
-		params := sdkapi.DeleteFileParams{
-			Auth:   auth,
-			FileId: fileGuid,
+		params := sdkapi.DeleteFileReq{
+			Metadata: auth,
+			FileID:   fileGuid,
 		}
-		_, rErr := invoker.SdkMgr.DeleteFile(params)
+		_, rErr := invoker.SdkMgr.DeleteFile(c.Request.Context(), params)
 		if rErr != nil {
 			elog.Warn("file remove failed", l.E(rErr))
 		}
@@ -1023,13 +1023,13 @@ func ExportTableSheets(c *gin.Context) {
 	fileGuid := c.Param("fileGuid")
 
 	auth := utils.GetAuth(getUserIdFromToken(c))
-	params := sdkapi.ExportTableSheetsParams{
-		Auth:   auth,
-		FileId: fileGuid,
+	params := sdkapi.ExportTableSheetsReq{
+		Metadata: auth,
+		FileID:   fileGuid,
 	}
-	res, err := invoker.SdkMgr.ExportTableSheets(params)
+	res, err := invoker.SdkMgr.ExportTableSheets(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, res.Resp.Body(), res.Resp.StatusCode())
+		handleSdkMgrError(c, res.Response().Body(), res.Response().StatusCode())
 		return
 	}
 	c.JSON(200, gin.H{
@@ -1041,14 +1041,14 @@ func mergePermission(base, src map[string]bool) {
 	if src == nil {
 		return
 	}
-	for _, initK := range consts.InitFilePermission() {
+	for _, initK := range sdk.InitFilePermission() {
 		if src[string(initK)] || src["manageable"] {
 			base[string(initK)] = true
 		} else {
 			base[string(initK)] = false
 		}
 	}
-	for _, newK := range consts.NewFilePermission() {
+	for _, newK := range sdk.NewFilePermission() {
 		if econf.GetBool("permissions.setNewFilePermission") {
 			if src[string(newK)] || src["manageable"] {
 				base[string(newK)] = true
@@ -1075,7 +1075,7 @@ func IsShimoType(typ string) int {
 }
 
 func genPreviewUrl(fileGuid string, userId int64, lang string) string {
-	previewUrl := econf.GetString("shimoSDK.host") + fmt.Sprintf("/api/cloud-files/%s/page", fileGuid)
+	previewUrl := econf.GetString("shimoSDK.host") + fmt.Sprintf(sdkapi.ApiCloudFilesPage, fileGuid)
 	appId := econf.GetString("shimoSDK.appId")
 	parseUrl, err := url.Parse(previewUrl)
 	if err != nil {
@@ -1086,14 +1086,14 @@ func genPreviewUrl(fileGuid string, userId int64, lang string) string {
 	queryParams.Add("lang", lang)
 	queryParams.Add("appId", appId)
 	queryParams.Add("token", utils.SignUserJWT(userId))
-	queryParams.Add("signature", utils.Sign(appId, econf.GetString("shimoSDK.appSecret"), false))
+	queryParams.Add("signature", invoker.SdkMgr.Sign(sdkapi.ExpireShort, sdkapi.ScopeDefault))
 
 	parseUrl.RawQuery = queryParams.Encode()
 	return parseUrl.String()
 }
 
 func genInspectPreviewUrl(fileGuid string, userId int64, lang string) string {
-	previewUrl := econf.GetString("shimoSDK.host") + fmt.Sprintf("/api/cloud-files/%s/page", fileGuid)
+	previewUrl := econf.GetString("shimoSDK.host") + fmt.Sprintf(sdkapi.ApiCloudFilesPage, fileGuid)
 	appId := econf.GetString("shimoSDK.appId")
 	parseUrl, err := url.Parse(previewUrl)
 	if err != nil {
@@ -1104,7 +1104,7 @@ func genInspectPreviewUrl(fileGuid string, userId int64, lang string) string {
 	queryParams.Add("lang", lang)
 	queryParams.Add("appId", appId)
 	queryParams.Add("token", utils.SignUserJWT(userId, 365*24*time.Hour))
-	queryParams.Add("signature", utils.Sign(appId, econf.GetString("shimoSDK.appSecret"), false))
+	queryParams.Add("signature", invoker.SdkMgr.Sign(sdkapi.ExpireShort, sdkapi.ScopeDefault))
 
 	parseUrl.RawQuery = queryParams.Encode()
 	return parseUrl.String()
@@ -1147,23 +1147,23 @@ func GetImportUrl0(c *gin.Context) {
 	// Import via URL
 	auth := utils.GetAuth(getUserIdFromToken(c))
 	reqBody := sdkapi.ImportFileReqBody{
-		FileId:   file.Guid,
+		FileID:   file.Guid,
 		Type:     "spreadsheet",
 		FileName: fileName,
 		FileUrl:  fileURL,
 	}
-	params := sdkapi.ImportFileParams{
-		Auth:              auth,
+	params := sdkapi.ImportFileReq{
+		Metadata:          auth,
 		ImportFileReqBody: reqBody,
 	}
-	ImportResp, err := invoker.SdkMgr.ImportFile(params)
+	ImportResp, err := invoker.SdkMgr.ImportFile(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, ImportResp.Resp.Body(), ImportResp.Resp.StatusCode())
+		handleSdkMgrError(c, ImportResp.Response().Body(), ImportResp.Response().StatusCode())
 		return
 	}
 
 	// Fetch the upload progress
-	var progressResp sdkapi.GetImportProgRespBody
+	var progressResp sdkapi.GetImportProgRes
 	success := false
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
@@ -1171,12 +1171,12 @@ func GetImportUrl0(c *gin.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			progressParams := sdkapi.GetImportProgParams{
-				Auth:   auth,
-				TaskId: ImportResp.Data.TaskId,
+			progressParams := sdkapi.GetImportProgReq{
+				Metadata: auth,
+				TaskId:   ImportResp.Data.TaskID,
 			}
 			// Fetch the upload progress
-			if progressResp, _ = invoker.SdkMgr.GetImportProgress(progressParams); progressResp.Status == 0 {
+			if progressResp, _ = invoker.SdkMgr.GetImportProgress(c.Request.Context(), progressParams); progressResp.Status == 0 {
 				success = true
 				break
 			}
@@ -1190,18 +1190,18 @@ func GetImportUrl0(c *gin.Context) {
 	}
 
 	// After a successful upload, create a preview and fetch its URL
-	createParams := sdkapi.CreatePreviewParams{
-		Auth:   auth,
-		FileId: file.Guid,
+	createParams := sdkapi.CreatePreviewReq{
+		Metadata: auth,
+		FileID:   file.Guid,
 	}
 	// Create the preview
-	previewResp, err := invoker.SdkMgr.CreatePreview(createParams)
+	previewResp, err := invoker.SdkMgr.CreatePreview(c.Request.Context(), createParams)
 	if err != nil || previewResp.Code != "" {
 		rmErr := db.RemoveFileByGuid(invoker.DB, file.Guid)
 		if rmErr != nil {
 			elog.Warn("rollback file failed", l.E(rmErr))
 		}
-		handleSdkMgrError(c, previewResp.Resp.Body(), previewResp.Resp.StatusCode())
+		handleSdkMgrError(c, previewResp.Response().Body(), previewResp.Response().StatusCode())
 		return
 	}
 
@@ -1276,23 +1276,23 @@ func GetImportUrl(c *gin.Context) {
 	auth := utils.GetAuth(getUserIdFromToken(c))
 	// Import via URL
 	reqBody := sdkapi.ImportFileReqBody{
-		FileId:   file.Guid,
+		FileID:   file.Guid,
 		Type:     "spreadsheet",
 		FileName: fileName,
 		FileUrl:  fileURL,
 	}
-	params := sdkapi.ImportFileParams{
-		Auth:              auth,
+	params := sdkapi.ImportFileReq{
+		Metadata:          auth,
 		ImportFileReqBody: reqBody,
 	}
-	ImportResp, err := invoker.SdkMgr.ImportFile(params)
+	ImportResp, err := invoker.SdkMgr.ImportFile(c.Request.Context(), params)
 	if err != nil {
-		handleSdkMgrError(c, ImportResp.Resp.Body(), ImportResp.Resp.StatusCode())
+		handleSdkMgrError(c, ImportResp.Response().Body(), ImportResp.Response().StatusCode())
 		return
 	}
 
 	// Fetch the upload progress
-	var progressResp sdkapi.GetImportProgRespBody
+	var progressResp sdkapi.GetImportProgRes
 	success := false
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
@@ -1300,12 +1300,12 @@ func GetImportUrl(c *gin.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			progressParams := sdkapi.GetImportProgParams{
-				Auth:   auth,
-				TaskId: ImportResp.Data.TaskId,
+			progressParams := sdkapi.GetImportProgReq{
+				Metadata: auth,
+				TaskId:   ImportResp.Data.TaskID,
 			}
 			// Fetch the upload progress
-			if progressResp, _ = invoker.SdkMgr.GetImportProgress(progressParams); progressResp.Status == 0 {
+			if progressResp, _ = invoker.SdkMgr.GetImportProgress(c.Request.Context(), progressParams); progressResp.Status == 0 {
 				success = true
 				break
 			}
@@ -1386,15 +1386,15 @@ func FrontInspectCreate(c *gin.Context) {
 
 	userId := getUserIdFromToken(c)
 
-	resultMap := make(map[consts.FileType]FileUrl)
+	resultMap := make(map[sdk.FileType]FileUrl)
 
 	for key, value := range body {
-		fileType := consts.GetFileType(key)
-		if fileType == consts.FileTypeInvalid {
+		fileType := sdk.GetFileType(key)
+		if fileType == sdk.FileTypeInvalid {
 			continue
 		}
 		// Generate the file URL
-		fileUrl, err := handleFileCreation(userId, value, fileType)
+		fileUrl, err := handleFileCreation(c.Request.Context(), userId, value, fileType)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
@@ -1407,7 +1407,7 @@ func FrontInspectCreate(c *gin.Context) {
 }
 
 // Extract the file-creation logic into a separate function
-func handleFileCreation(userId int64, value TempFile, fileType consts.FileType) (FileUrl, error) {
+func handleFileCreation(c context.Context, userId int64, value TempFile, fileType sdk.FileType) (FileUrl, error) {
 	guid := utils.GenerateUserFileUUID(strconv.FormatInt(userId, 10), string(fileType))
 	// Check whether the file exists
 	if f, err := db.FindFileByGuid(invoker.DB, guid); err == nil && f.Guid != "" {
@@ -1433,13 +1433,13 @@ func handleFileCreation(userId int64, value TempFile, fileType consts.FileType) 
 	}
 	// Call the SDK to create the file
 	auth := utils.GetAuth(userId)
-	cFile := sdkapi.CreateFileParams{
-		FileType: sdkcommon.CollabFileType(file.ShimoType),
-		Auth:     auth,
-		FileId:   file.Guid,
+	cFile := sdkapi.CreateFileReq{
+		FileType: sdkapi.CollabFileType(file.ShimoType),
+		Metadata: auth,
+		FileID:   file.Guid,
 	}
 
-	if _, err := invoker.SdkMgr.CreateFile(cFile); err != nil {
+	if _, err := invoker.SdkMgr.CreateFile(c, cFile); err != nil {
 		_ = db.RemoveFileById(invoker.DB, fileId)
 		return FileUrl{}, fmt.Errorf("SDK failed to create file: %v", err)
 	}

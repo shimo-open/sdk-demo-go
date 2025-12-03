@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gotomicro/cetus/l"
 	"github.com/gotomicro/ego/core/elog"
+	sdk "github.com/shimo-open/sdk-kit-go"
 	"k8s.io/apimachinery/pkg/util/uuid"
 
 	"sdk-demo-go/cmd/sdkctl"
@@ -144,12 +145,12 @@ func handleTestResult(handleResult consts.AllApiTestRes) map[string][]consts.Sin
 		switch k {
 		case "BaseTestResMap":
 			for key, _ := range handleResult.BaseTestResMap {
-				if key != consts.FileTypeTable {
+				if key != sdk.FileTypeTable {
 					// Application spreadsheets do not expose these two APIs
 					testResult[k] = append(testResult[k], handleResult.BaseTestResMap[key].GetPlainTextRes)
 					testResult[k] = append(testResult[k], handleResult.BaseTestResMap[key].GetPlainTextWordCountRes)
 				}
-				if key != consts.FileTypeSlide && key != consts.FileTypeTable {
+				if key != sdk.FileTypeSlide && key != sdk.FileTypeTable {
 					// PPT and application spreadsheets do not provide the get-at API
 					testResult[k] = append(testResult[k], handleResult.BaseTestResMap[key].GetMentionAtListRes)
 				}

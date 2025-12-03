@@ -8,18 +8,18 @@ import (
 	"github.com/gotomicro/cetus/l"
 	"github.com/gotomicro/ego/core/econf"
 	"github.com/gotomicro/ego/core/elog"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 
-	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/utils"
 )
 
 func findShimoToken(c *gin.Context) string {
-	str := c.GetHeader(consts.TOKEN)
+	str := c.GetHeader(sdkapi.HeaderShimoToken)
 	return str
 }
 
 func CallbackAuthMiddleware(c *gin.Context) {
-	switch c.GetHeader(consts.CREDENTIAL) {
+	switch c.GetHeader(sdkapi.HeaderShimoCredentialType) {
 	case "0":
 		token := findShimoToken(c)
 		if token == "" {
@@ -35,7 +35,7 @@ func CallbackAuthMiddleware(c *gin.Context) {
 		c.Next()
 		return
 	case "3":
-		signature := c.GetHeader(consts.SIGNATURE)
+		signature := c.GetHeader(sdkapi.HeaderShimoSignature)
 		if signature == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"message": "signature is required",

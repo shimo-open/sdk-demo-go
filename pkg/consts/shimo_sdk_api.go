@@ -1,9 +1,5 @@
 package consts
 
-import (
-	"net/http"
-)
-
 type ShimoSdkApi string
 
 type ShimoSdkPath string
@@ -94,107 +90,6 @@ const (
 	ShimoSdkPathExportFile         ShimoSdkPath = "/sdk/v2/api/files/v1/export/"
 	ShimoSdkPathExportFileProgress ShimoSdkPath = "/sdk/v2/api/files/v1/export/progress"
 )
-
-// ShimoSdkApiExpectCodesMap lists expected HTTP codes
-var ShimoSdkApiExpectCodesMap = map[ShimoSdkApi]map[int]struct{}{
-	ShimoSdkApiCreatePreview: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetPreview: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetPreviewDownload: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiCreateFile: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiCreateFileCopy: {
-		http.StatusOK:        {},
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiDeleteFile: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiImportFile: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiImportFileByUrl: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiImportFileProgress: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiExportFile: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiExportFileProgress: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiExportTableAsExcel: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetFilePlainText: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetFilePlainTextWordCount: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetDocSidebarInfo: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetRevision: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetExcelContent: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiUpdateExcelContent: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiAppendExcelContent: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiDeleteExcelRows: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiCreateExcelSheet: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiGetDocProBookmark: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiReplaceDocProBookmark: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiErrorCallback: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetMentionAt: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetCommentCount: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiGetAppDetails: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiUpdateAppEndpoint: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiGetUsersWithStatus: {
-		http.StatusOK: {},
-	},
-	ShimoSdkApiActivateUsers: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiDeactivateUsers: {
-		http.StatusNoContent: {},
-	},
-	ShimoSdkApiBatchSetUsersStatus: {
-		http.StatusNoContent: {},
-	},
-}
 
 var ShimoSdkApiNameMap = map[ShimoSdkApi]string{
 	ShimoSdkApiCreatePreview:             "创建预览",

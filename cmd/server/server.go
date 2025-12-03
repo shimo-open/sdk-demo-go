@@ -26,8 +26,8 @@ func init() {
 }
 
 // CmdFunc is the entry point for the server command
-func CmdFunc(cmd *cobra.Command, args []string) {
-	e := ego.New()
+func CmdFunc(c *cobra.Command, args []string) {
+	e := ego.New(ego.WithDisableFlagConfig(true))
 	e.Invoker(invoker.Init)
 	if err := e.Serve(
 		egovernor.Load("server.governor").Build(),

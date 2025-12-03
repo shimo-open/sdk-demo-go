@@ -3,28 +3,20 @@ package sdkctl
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"log"
-	"os"
 
 	"github.com/ego-component/egorm"
-	"github.com/gotomicro/ego/core/econf"
-	"github.com/gotomicro/ego/core/econf/manager"
-	"github.com/gotomicro/ego/core/eflag"
-	sdkapi "github.com/shimo-open/sdk-kit-go/model/api"
+	sdk "github.com/shimo-open/sdk-kit-go"
+	sdkapi "github.com/shimo-open/sdk-kit-go/api"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	_ "go.uber.org/automaxprocs"
 
 	"sdk-demo-go/cmd"
-	"sdk-demo-go/pkg/consts"
 	"sdk-demo-go/pkg/invoker"
 	"sdk-demo-go/pkg/utils"
 )
 
 var (
-	config       string
-	watch        bool
 	fileId       string
 	fileName     string
 	fileType     string
@@ -58,15 +50,6 @@ var SdkCtl = &cobra.Command{
 	Short: "sdk demo command-line tool",
 	Long:  `sdk demo command-line tool`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		fmt.Println("ConfigFile", config)
-		log.Println("ConfigFile", config)
-		provider, parser, tag, err := manager.NewDataSource(config, eflag.Bool("watch"))
-		if err != nil {
-			log.Fatal("load config fail: ", err)
-		}
-		if err := econf.LoadFromDataSource(provider, parser, econf.WithSquash(true), econf.WithTagName(tag)); err != nil {
-			log.Fatal("data source: load config, unmarshal config err: ", err)
-		}
 		// ShimoSDK = shimo.InitTest()
 		invoker.DB = egorm.Load("mysql").Build()
 		initParams()
@@ -342,7 +325,7 @@ var ApiTestBatch_Base = &cobra.Command{
 	Short: "Basic functionality testing",
 	Long:  "Basic functionality testing",
 	Run: func(cmd *cobra.Command, args []string) {
-		TestBase(context.Background(), []consts.FileType{consts.GetFileType(getFileTypeStr(args))})
+		TestBase(context.Background(), []sdk.FileType{sdk.GetFileType(getFileTypeStr(args))})
 	},
 }
 
@@ -378,13 +361,6 @@ var ApiTestBatch_All = &cobra.Command{
 }
 
 func init() {
-	confEnv := os.Getenv("EGO_CONFIG_PATH")
-	if confEnv == "" {
-		confEnv = "config/local.toml"
-	}
-	SdkCtl.PersistentFlags().StringVarP(&config, "config", "c", confEnv, "Specify configuration file, defaults to config/local.toml")
-	SdkCtl.PersistentFlags().BoolVarP(&watch, "watch", "w", true, "Specify configuration file, defaults to config/local.toml")
-
 	SdkCtl.InheritedFlags()
 	ApiTestCtl.InheritedFlags()
 	cmd.RootCommand.AddCommand(SdkCtl)
